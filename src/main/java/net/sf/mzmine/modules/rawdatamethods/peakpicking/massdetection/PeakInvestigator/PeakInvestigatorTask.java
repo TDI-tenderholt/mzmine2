@@ -49,6 +49,8 @@ import javax.swing.ProgressMonitor;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -67,6 +69,7 @@ import org.xeustechnologies.jtar.TarOutputStream;
 import com.veritomyx.FileChecksum;
 import com.veritomyx.PeakInvestigatorSaaS;
 import com.veritomyx.PeakInvestigatorSaaS.prep_status_type;
+import com.veritomyx.actions.PiVersionsAction;
 
 /**
  * This class is used to run a set of scans through the Veritomyx SaaS servers
@@ -76,26 +79,30 @@ import com.veritomyx.PeakInvestigatorSaaS.prep_status_type;
  */
 public class PeakInvestigatorTask
 {
+	private final static String API_VERSION = "3.0";
 	private Logger          logger;
 	private boolean         launch;			// launch or retrieve
-	private String          jobID;			// name of the job and the scans tar file
+	private String          jobID = null;			// name of the job and the scans tar file
 	private String          desc;
 	private int             scanCnt;		// number of scans
 	private int				minMass;		// Minimum mass to process from
 	private int				maxMass;		// Maximum mass to process to
 	private String          targetName;
-	private String          intputFilename;
-	private String          outputFilename;
-	private String			inputLogFilename;
+
+	private File workingDirectory;
+	private File inputFile;
+
 	private String			logInfo;
-	private PeakInvestigatorSaaS   vtmx;
+	private PeakInvestigatorSaaS   vtmx = new PeakInvestigatorSaaS(MZmineCore.VtmxLive);
 	private String          username;
 	private String          password;
 	private int             pid;
 	private Boolean			showLog;
-	private TarOutputStream tarfile;
+	private TarOutputStream tarfile = null;
 	private RawDataFile     rawDataFile;
 	private int             errors;
+	
+	private PiVersionsAction versionsAction;
 	
 	private static final long minutesCheckPrep = 2;
 	private static final long minutesTimeoutPrep = 20;
@@ -103,35 +110,17 @@ public class PeakInvestigatorTask
 	private static final int numSaaSStartSteps = 16;
 	private static final int numSaaSRetrieveSteps = 7;
 
-	public PeakInvestigatorTask(RawDataFile raw, String pickup_job, String target, ParameterSet parameters, int scanCount)
-	{
+	public PeakInvestigatorTask(RawDataFile raw, String pickup_job,
+			String target, ParameterSet parameters, int scanCount) {
 		logger  = Logger.getLogger(this.getClass().getName());
 		logger.setLevel(MZmineCore.VtmxLive ? Level.INFO : Level.FINEST);
 		logger.info("Initializing PeakInvestigator™ Task");
-		jobID   = null;
-		tarfile = null;
 		desc    = "initializing";
 		
 		minMass = parameters.getParameter(PeakInvestigatorParameters.minMass).getValue();
 		maxMass = parameters.getParameter(PeakInvestigatorParameters.maxMass).getValue();
 		showLog = parameters.getParameter(PeakInvestigatorParameters.showLog).getValue();
 		
-		// pickup all the parameters
-		MZminePreferences preferences = MZmineCore.getConfiguration().getPreferences();
-		username = preferences.getParameter(MZminePreferences.vtmxUsername).getValue();
-		password = preferences.getParameter(MZminePreferences.vtmxPassword).getValue();
-		pid      = preferences.getParameter(MZminePreferences.vtmxProject).getValue();
-		
-		
-		if ((username == null) || username.isEmpty() || (password == null) || password.isEmpty())
-		{
-			if (preferences.showSetupDialog(MZmineCore.getDesktop().getMainWindow(), false) != ExitCode.OK)
-				return;
-			username = preferences.getParameter(MZminePreferences.vtmxUsername).getValue();
-			password = preferences.getParameter(MZminePreferences.vtmxPassword).getValue();
-			pid      = preferences.getParameter(MZminePreferences.vtmxProject).getValue();
-		}
-
 		// save the raw data file
 		rawDataFile = raw;
 
@@ -139,41 +128,29 @@ public class PeakInvestigatorTask
 		launch     = (pickup_job == null);
 		targetName = target;
 
-		// make sure we have access to the Veritomyx Server
-		// this also gets the job_id and SFTP credentials
-		vtmx = new PeakInvestigatorSaaS(MZmineCore.VtmxLive);
-		int status = 0;
-		while (true)
-		{
-			status = vtmx.init(username, password, pid, pickup_job, scanCount, minMass, maxMass);
-			if (status > 0)
-				break;
-
-			desc = vtmx.getPageStr();
-			MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(), "Error", desc, logger);
-			if ((status != PeakInvestigatorSaaS.W_ERROR_LOGIN) && (status != PeakInvestigatorSaaS.W_ERROR_PID))
-				return;
-
-			if (preferences.showSetupDialog(MZmineCore.getDesktop().getMainWindow(), false) != ExitCode.OK)
-				return;
-			username = preferences.getParameter(MZminePreferences.vtmxUsername).getValue();
-			password = preferences.getParameter(MZminePreferences.vtmxPassword).getValue();
-			pid      = preferences.getParameter(MZminePreferences.vtmxProject).getValue();
-		}
-
-		if (!launch && (status <= 0))
-		{
-			desc = vtmx.getPageStr();
-			MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(), "Error", desc, logger);
+		jobID          = vtmx.getJobID();
+		Path tempPath = null;
+		try {
+			tempPath = Files.createTempDirectory(jobID + "-");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			MZmineCore.getDesktop().displayErrorMessage(
+					MZmineCore.getDesktop().getMainWindow(), "Error",
+					"Unable to create temporary diretory.", logger);
+			jobID = "";
 			return;
 		}
 
-		jobID          = vtmx.getJobID();
-		intputFilename = jobID + ".scans.tar";
-		outputFilename = jobID + ".vcent.tar";
-		inputLogFilename = jobID + ".log.txt";
+		workingDirectory = new File(tempPath.toString());
+		workingDirectory.deleteOnExit();
+
+		inputFile = new File(tempPath + File.separator + jobID + ".scans.tar");
+		inputFile.deleteOnExit();
+
 	}
 	
+
+
 	public String getDesc() { return desc; }
 
 	/**
@@ -226,8 +203,10 @@ public class PeakInvestigatorTask
 		desc = "starting launch";
 		logger.info("Preparing to launch new job, " + jobID);
 		scanCnt = 0;
+
 		try {
-			tarfile = new TarOutputStream(new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(intputFilename))));
+			tarfile = new TarOutputStream(new BufferedOutputStream(
+					new GZIPOutputStream(new FileOutputStream(inputFile))));
 		} catch (IOException e) {
 			logger.finest(e.getMessage());
 			MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(), "Error", "Cannot create scans bundle file", logger);
@@ -251,10 +230,10 @@ public class PeakInvestigatorTask
 		try {
 			// export the scan to a file
 			String filename = "scan_" + String.format("%04d", scan_num) + ".txt";
-			scan.exportToFile("", "", filename);
+			scan.exportToFile("", workingDirectory.toString(), filename);
 
 			// put the exported scan into the tar file
-			File f = new File(filename);
+			File f = new File(getFilenameWithPath(filename));
 			tarfile.putNextEntry(new TarEntry(f, filename));
 			BufferedInputStream origin = new BufferedInputStream(new FileInputStream(f));
 			int count;
@@ -293,9 +272,9 @@ public class PeakInvestigatorTask
 			MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(), "Error", "Cannot close scans bundle file.", logger);
 		}
 		progressMonitor.setProgress(1);
-		
-		logger.info("Transmit scans bundle, " + intputFilename + ", to SFTP server...");
-		vtmx.putFile(intputFilename);
+
+		logger.info("Transmit scans bundle, " + inputFile.getName() + ", to SFTP server...");
+		vtmx.putFile(inputFile);
 		if (progressMonitor.isCanceled()) {
 		    progressMonitor.close();
 		    logger.info("Job, " + jobID + ", canceled");
@@ -306,7 +285,8 @@ public class PeakInvestigatorTask
 
 		//####################################################################
 		// Prepare for remote job in a loop as it might take some time to analyze
-		logger.info("Awaiting PREP analysis, " + intputFilename + ", on SaaS server...");
+		logger.info("Awaiting PREP analysis, " + inputFile.getName()
+				+ ", on SaaS server...");
 		progressMonitor.setNote("Performing a pre-check analysis.");
 		int prep_ret = vtmx.getPagePrep(scanCnt);
 		progressMonitor.setProgress(3);
@@ -318,7 +298,9 @@ public class PeakInvestigatorTask
 		long timeWait = minutesTimeoutPrep;
 		int count = 0;
 		while(prep_ret == PeakInvestigatorSaaS.W_PREP && prep_status == prep_status_type.PREP_ANALYZING && timeWait > 0) {
-			logger.info("Waiting for PREP analysis to complete, " + intputFilename + ", on SaaS server...Please be patient.");
+			logger.info("Waiting for PREP analysis to complete, "
+					+ inputFile.getName()
+					+ ", on SaaS server...Please be patient.");
 			Thread.sleep(minutesCheckPrep * 60000);
 			prep_ret = vtmx.getPagePrep(scanCnt);
 			prep_status = vtmx.getPrepStatus();
@@ -361,8 +343,6 @@ public class PeakInvestigatorTask
 
 		rawDataFile.addJob("job-" + jobID, rawDataFile, targetName, vtmx);	// record this job start
 		logger.finest(vtmx.getPageStr());
-		File f = new File(intputFilename);
-		f.delete();			// remove the local copy of the tar file
 
 		desc = "launch finished";
 	}
@@ -428,21 +408,25 @@ public class PeakInvestigatorTask
 		    logger.info("Job, " + jobID + ", canceled");
 		    return;
 		}
-		progressMonitor.setProgress(2);
-		progressMonitor.setNote("Reading centroided data, " + outputFilename + ", from SFTP drop...");
 		
-		outputFilename = vtmx.getResultsFilename();
 		// read the results tar file and extract all the peak list files
-		logger.info("Reading centroided data, " + outputFilename + ", from SFTP drop...");
-		vtmx.getFile(outputFilename);
+		String remoteFilename = vtmx.getResultsFilename();
+		File remoteFile = new File(remoteFilename);
+
+		progressMonitor.setProgress(2);
+		progressMonitor.setNote("Reading centroided data, " + remoteFile.getName() + ", from SFTP drop...");
+		logger.info("Reading centroided data, " + remoteFilename + ", from SFTP drop...");
+
+		File localFile = new File(workingDirectory + File.separator + remoteFile.getName());
+		localFile.deleteOnExit();
+		vtmx.getFile(remoteFilename, localFile);
 		{
 			progressMonitor.setProgress(3);
 			
 			TarInputStream tis = null;
 			FileOutputStream outputStream = null;
 			try {
-				File fullPath = new File(outputFilename); // outputfilename looks like /files/C-1022.1391/C-1022.1391.mass_list.tar
-				tis = new TarInputStream(new GZIPInputStream(new FileInputStream(fullPath.getName())));
+				tis = new TarInputStream(new GZIPInputStream(new FileInputStream(localFile)));
 				TarEntry tf;
 				int bytesRead;
 				byte buf[] = new byte[1024];
@@ -451,13 +435,16 @@ public class PeakInvestigatorTask
 					if (tf.isDirectory()) continue;
 					progressMonitor.setNote("Extracting peaks data to " + tf.getName() + " - " + tf.getSize() + " bytes");
 					logger.info("Extracting peaks data to " + tf.getName() + " - " + tf.getSize() + " bytes");
-					outputStream = new FileOutputStream(tf.getName());
+
+					File scanFile = new File(getFilenameWithPath(tf.getName()));
+					scanFile.deleteOnExit();
+					outputStream = new FileOutputStream(scanFile);
 					while ((bytesRead = tis.read(buf, 0, 1024)) > -1)
 						outputStream.write(buf, 0, bytesRead);
 					outputStream.close();
 				}
 				tis.close();
-				fullPath.delete();			// remove the local copy of the results tar file
+
 				progressMonitor.setProgress(4);
 			} catch (Exception e1) {
 				logger.finest(e1.getMessage());
@@ -468,23 +455,29 @@ public class PeakInvestigatorTask
 				try { tis.close(); } catch (Exception e) {}
 				try { outputStream.close(); } catch (Exception e) {}
 			}
-			inputLogFilename = vtmx.getJobLogFilename();
-			// read the job log tar file and extract all the peak list files
-			progressMonitor.setNote("Reading log, " + inputLogFilename + ", from SFTP drop...");
-			logger.info("Reading log, " + inputLogFilename + ", from SFTP drop...");
 			
+			remoteFilename = vtmx.getJobLogFilename();
+			remoteFile = new File(remoteFilename);
+
+			// read the job log tar file and extract all the peak list files
+			progressMonitor.setNote("Reading log, " + remoteFile.getName() + ", from SFTP drop...");
+			logger.info("Reading log, " + remoteFilename + ", from SFTP drop...");
+
 			progressMonitor.setProgress(5);
 			if (progressMonitor.isCanceled()) {
 			    progressMonitor.close();
 			    logger.info("Job, " + jobID + ", canceled");
 			    return;
 			}
-			vtmx.getFile(inputLogFilename);
+
+			localFile = new File(workingDirectory + File.separator + remoteFile.getName());
+			localFile.deleteOnExit();
+
+			vtmx.getFile(remoteFilename, localFile);
 			progressMonitor.setProgress(6);
 			if (showLog) {
-				File fileWithFullPath = new File(inputLogFilename);
 				try (BufferedReader br = new BufferedReader(new FileReader(
-						fileWithFullPath.getName()))) {
+						localFile))) {
 					StringBuilder sb = new StringBuilder();
 					String line = br.readLine();
 
@@ -497,10 +490,6 @@ public class PeakInvestigatorTask
 					logInfo = sb.toString();
 					PeakInvestigatorLogDialog logDialog = new PeakInvestigatorLogDialog(logInfo);
 					logDialog.setVisible(true);
-
-//					MZmineCore.getDesktop().displayMessage(
-//							MZmineCore.getDesktop().getMainWindow(),
-//							"Peak Investigator Job Log", logInfo);
 
 				} catch (FileNotFoundException e2) {
 					MZmineCore.getDesktop().displayErrorMessage(
@@ -540,11 +529,14 @@ public class PeakInvestigatorTask
 
 		// read in the peaks for this scan
 		// convert filename to expected peak file name
-		String pfilename = "scan_" + String.format("%04d", scan_num) + ".scan.mass_list.txt";
-		logger.info("Parsing peaks data from " + pfilename);
+		String basename = "scan_" + String.format("%04d", scan_num) + ".scan.mass_list.txt";
+		String pfilename = getFilenameWithPath(basename);
+		logger.info("Parsing peaks data from " + basename);
 		try
 		{
 			File centfile = new File(pfilename);
+			centfile.deleteOnExit();
+
 			FileChecksum fchksum = new FileChecksum(centfile);
 			fchksum.verify(false);
 // TODO: handle checksums
@@ -564,7 +556,7 @@ public class PeakInvestigatorTask
 				mzPeaks.add(new SimpleDataPoint(mz, y));
 				sc.close();
 			}
-			centfile.delete();	// delete the temporary results peaks list file
+
 		}
 		catch (FileNotFoundException e) { /* expect some scans might not be included in original processing */ }
 		catch (Exception e)
@@ -600,6 +592,16 @@ public class PeakInvestigatorTask
 		MZmineCore.getDesktop().displayMessage(MZmineCore.getDesktop().getMainWindow(), "Warning", "PeakInvestigator results successfully downloaded.\n" + 
 											"All your job files will now be deleted from the Veritomyx servers.\n" +
 											"Remember to save your project before closing MZminePI.", logger);
+	}
+
+	/**
+	 * Convenience function to return an absolute path for given filename in
+	 * the (temporary) working directory.
+	 * 
+	 * @param filename
+	 */
+	private String getFilenameWithPath(String filename) {
+		return workingDirectory + File.separator + filename;
 	}
 
 	class PeakInvestigatorLogDialog extends JDialog implements ActionListener {

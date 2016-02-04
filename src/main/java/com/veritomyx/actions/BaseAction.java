@@ -44,7 +44,7 @@ public abstract class BaseAction {
 		responseObject = (JSONObject) parser.parse(response);
 	}
 
-	protected boolean isReady(String action) throws IllegalStateException {
+	public boolean isReady(String action) throws IllegalStateException {
 		if (responseObject == null) {
 			return false;
 		}
@@ -83,6 +83,10 @@ public abstract class BaseAction {
 
 	public long getLongAttribute(String attribute) {
 		return (Long) responseObject.get(attribute);
+	}
+
+	public double getDoubleAttribute(String attribute) {
+		return (Double) responseObject.get(attribute);
 	}
 
 	public Date getDateAttribute(String attribute) throws java.text.ParseException {
