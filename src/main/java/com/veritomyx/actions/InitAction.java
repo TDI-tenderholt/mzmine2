@@ -1,6 +1,8 @@
 package com.veritomyx.actions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.simple.JSONArray;
@@ -9,6 +11,10 @@ import org.json.simple.JSONObject;
 public class InitAction extends BaseAction {
 	private static final String action = "INIT";
 
+	public final static String EXAMPLE_RESPONSE_1 = "{\"Action\":\"INIT\",\"Job\":\"V-504.1461\",\"ProjectID\":504,\"Funds\":115.01,\"EstimatedCost\":{\"TOF\":{\"RTO-24\":0.6},\"Orbitrap\":{\"RTO-24\":0.85},\"Iontrap\":{\"RTO-24\":1.02}}}";
+	public final static String EXAMPLE_RESPONSE_2 = "{\"Action\":\"INIT\",\"Job\":\"V-504.1461\",\"SubProjectID\":504,\"Funds\":115.01,\"EstimatedCost\":{\"TOF\":{\"RTO-24\":0.6},\"Orbitrap\":{\"RTO-24\":0.85},\"Iontrap\":{\"RTO-24\":1.02}}}";
+	public final static String EXAMPLE_RESPONSE_3 = "{\"Action\":\"INIT\",\"Job\":\"V-504.1461\",\"SubProjectID\":504,\"Funds\":115.01,\"EstimatedCost\":{\"TOF\":{\"RTO-24\":0.6,\"RTO-0\":12.00},\"Orbitrap\":{\"RTO-24\":0.85, \"RTO-0\":24.00},\"Iontrap\":{\"RTO-24\":1.02,\"RTO-0\":26.00}}}";
+
 	private int ID;
 	private String versionOfPi;
 	private int scanCount;
@@ -16,6 +22,8 @@ public class InitAction extends BaseAction {
 	private int minMass;
 	private int maxMass;
 	private int calibrationCount;
+
+	private HashMap<String, ResponseTimeCosts> estimatedCosts = null;
 
 	private InitAction(String versionOfApi, String user, String code, int ID, String versionOfPi, int scanCount,
 			int maxPoints, int minMass, int maxMass, int calibrationCount) {
@@ -83,6 +91,11 @@ public class InitAction extends BaseAction {
 		}
 	}
 
+	public void reset() {
+		super.reset();
+		estimatedCosts = null;
+	}
+
 	public String getJob() {
 		preCheck();
 		return getStringAttribute("Job");
@@ -101,7 +114,11 @@ public class InitAction extends BaseAction {
 	public HashMap<String, ResponseTimeCosts> getEstimatedCosts() {
 		preCheck();
 
-		HashMap<String, ResponseTimeCosts> estimatedCosts = new HashMap<>();
+		if (estimatedCosts != null) {
+			return estimatedCosts;
+		}
+
+		estimatedCosts = new HashMap<>();
 		JSONObject RTOs = (JSONObject) responseObject.get("EstimatedCost");
 		for (Object instrument : RTOs.keySet()) {
 			ResponseTimeCosts costs = new ResponseTimeCosts();
@@ -116,6 +133,55 @@ public class InitAction extends BaseAction {
 		return estimatedCosts;
 	}
 
+	/**
+	 * Convenience function to get the Response Time Objectives from the
+	 * Estimated Costs. Assumes that each ResponseTimeCosts value have exactly
+	 * the same number and name of RTO.
+	 * 
+	 * @return List of strings corresponding to RTOs (e.g. "RTO-24", "RTO-0",
+	 *         etc.)
+	 */
+	public String[] getResponseTimeObjectives() {
+		ArrayList<ResponseTimeCosts> costs = new ArrayList<>(
+				getEstimatedCosts().values());
+		if (costs.size() == 0) {
+			return new String[] {};
+		}
+
+		Set<String> RTOs = costs.get(0).keySet();
+		return RTOs.toArray(new String[RTOs.size()]);
+	}
+
+	/**
+	 * Convenience function to get the MStypes from the Estimated Costs.
+	 * 
+	 * @return List of type of mass spec (e.g. TOF, Iontrap, Orbitrap)
+	 */
+	public String[] getMSTypes() {
+		Set<String> keys = getEstimatedCosts().keySet();
+		return keys.toArray(new String[keys.size()]);
+	}
+
+	/**
+	 * Convenience function to get the maximum potential cost from Estimated
+	 * Costs for a given Response Time Objective.
+	 * 
+	 * @param RTO
+	 *            Desired Response Time Objective (e.g. RTO-24)
+	 * @return Maximum of costs across all MS types for given RTO
+	 */
+	public double getMaxPotentialCost(String RTO) {
+		double maxCost = 0;
+		for (ResponseTimeCosts costs : getEstimatedCosts().values()) {
+			double cost = costs.getCost(RTO);
+			if (maxCost > cost) {
+				maxCost = cost;
+			}
+		}
+
+		return maxCost;
+	}
+
 	@Override
 	public String getErrorMessage() {
 		preCheck();
@@ -123,7 +189,7 @@ public class InitAction extends BaseAction {
 	}
 
 	@Override
-	public int getErrorCode() {
+	public long getErrorCode() {
 		preCheck();
 		return super.getErrorCode();
 	}

@@ -20,16 +20,25 @@
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.veritomyx.VeritomyxSettings;
+import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.PiVersionsAction;
+
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.impl.RemoteJob;
+import net.sf.mzmine.desktop.preferences.MZminePreferences;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetector;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorTask.ResponseErrorException;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.opensftp.SftpException;
 
 public class PeakInvestigatorDetector implements MassDetector
 {
@@ -49,8 +58,8 @@ public class PeakInvestigatorDetector implements MassDetector
 
 	public String getDescription(String orig, String str)
 	{
-		String jobName = filterJobName(orig);
-		String target  = filterTargetName(orig);
+		String jobName = RemoteJob.filterJobName(orig);
+		String target  = RemoteJob.filterTargetName(orig);
 		desc = "target: " + target + "; ";
 		PeakInvestigatorTask job = null;
 		if (jobName == null)
@@ -71,51 +80,107 @@ public class PeakInvestigatorDetector implements MassDetector
 	public Class<? extends ParameterSet> getParameterSetClass() { return PeakInvestigatorParameters.class; }
 
 	/**
-	 * Return target name and filter out possible job name from "|job-########-#####[target]"
+	 * Given a compound name that identifies a job and its target (i.e. future
+	 * mass list), return the target.
 	 * 
 	 * @param compoundName
-	 * @return
+	 *            Takes the form "|job-####-###[target]
+	 * @return target
 	 */
 	public String filterTargetName(String compoundName)
 	{
-		if (compoundName.startsWith("|job-"))
-			return compoundName.substring(compoundName.indexOf('[') + 1, compoundName.indexOf(']'));
-		return compoundName;
-	}
-
-	/**
-	 * Return job name and filter out target name from "|job[target]"
-	 * 
-	 * @param compoundName
-	 * @return
-	 */
-	private String filterJobName(String compoundName)
-	{
-		if (compoundName.startsWith("|job-"))
-			return compoundName.substring(5, compoundName.indexOf('['));
-		return null;
+		return RemoteJob.filterTargetName(compoundName);
 	}
 
 	/**
 	 * Create a new job task from the given parameters
 	 * 
 	 * @param raw
-	 * @param targetName
+	 * @param name
+	 *            When launching job, the name of the mass list after
+	 *            centroiding. When retrieving job, name of job plus mass list
+	 *            (e.g. |job-C-1022.1483[PI]).
 	 * @param parameters
 	 * @param scanCount
 	 * @return
 	 */
-	public String startMassValuesJob(RawDataFile raw, String name, ParameterSet parameters, int scanCount)
-	{
-		PeakInvestigatorTask job = new PeakInvestigatorTask(raw, filterJobName(name), filterTargetName(name), parameters, scanCount);
-		String job_name = job.getName();
-		logger.finest("startMassValuesJob " + filterJobName(name) + " - " + job_name + " - " + ((job != null) ? job.getDesc() : "nojob"));
-		if (job_name != null)
-		{
-			jobs.add(job);
-			job.start();
+	public String startMassValuesJob(RawDataFile raw, String name,
+			ParameterSet parameterSet, int scanCount) {
+
+		MZminePreferences preferences = MZmineCore.getConfiguration()
+				.getPreferences();
+		VeritomyxSettings settings = preferences.getVeritomyxSettings();
+
+		PeakInvestigatorTask job = new PeakInvestigatorTask(settings.server,
+				settings.username, settings.password, settings.projectID)
+				.withRawDataFile(raw);
+
+		PeakInvestigatorParameters parameters = (PeakInvestigatorParameters) parameterSet;
+		try {
+
+			// not only does this get versions, it validates credentials
+			String selectedPiVersion = selectPiVersion(parameters,
+					preferences);
+
+			if (!name.startsWith("|")) {
+				int[] massRange = parameters.getMassRange();
+				logger.info(String.format(
+						"Starting analysis on mass range %d - %d.",
+						massRange[0], massRange[1]));
+				job.initializeSubmit(selectedPiVersion, scanCount,
+						parameters.getMassRange(), filterTargetName(name));
+			} else {
+				logger.info("Checking status of job.");
+				job.initializeFetch(name, parameters.shouldDisplayLog());
+			}
+
+		} catch (IllegalStateException | ResponseFormatException | ResponseErrorException e) {
+			error(e.getMessage());
+			e.printStackTrace();
+			return null;
 		}
+
+		String job_name = job.getName();
+		logger.finest("startMassValuesJob " + RemoteJob.filterJobName(name) + " - "
+				+ job_name + " - " + ((job != null) ? job.getDesc() : "nojob"));
+
+		if (job_name == null) {
+			return null;
+		}
+
+		try {
+			job.start();
+		} catch (FileNotFoundException | ResponseFormatException | ResponseErrorException e) {
+			error(e.getMessage());
+			e.printStackTrace();
+			return null;
+		} catch (IOException | SftpException e) {
+			error(e.getMessage());
+			e.printStackTrace();
+			return null;
+		}
+
+		jobs.add(job);
+
 		return job_name;
+	}
+
+	public String selectPiVersion(PeakInvestigatorParameters parameters,
+			MZminePreferences preferences) throws ResponseFormatException {
+
+		String selectedPiVersion = parameters.getPiVersion();
+
+		if (selectedPiVersion == PeakInvestigatorParameters.LAST_USED_STRING) {
+			PiVersionsAction action = PeakInvestigatorParameters
+					.performPiVersionsCall(preferences);
+			if (!action.getLastUsedVersion().isEmpty()) {
+				selectedPiVersion = action.getLastUsedVersion();
+			} else {
+				selectedPiVersion = action.getCurrentVersion();
+			}
+		}
+
+		return selectedPiVersion;
 	}
 
 	/**
@@ -171,6 +236,12 @@ public class PeakInvestigatorDetector implements MassDetector
 				return job;
 		}
 		return null;
+	}
+
+	private void error(String message) {
+		MZmineCore.getDesktop().displayErrorMessage(
+				MZmineCore.getDesktop().getMainWindow(), "Error", message,
+				logger);
 	}
 
 }

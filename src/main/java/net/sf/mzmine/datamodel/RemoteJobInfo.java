@@ -26,9 +26,8 @@ import javax.annotation.Nonnull;
  */
 public interface RemoteJobInfo
 {
-    @Nonnull public String      getName();
+    @Nonnull public String      getJobID();
     @Nonnull public String      toString();
     @Nonnull public RawDataFile getRawDataFile();
-    @Nonnull public String      getTargetName();
-    @Nonnull public int         getStatus();
+    @Nonnull public String      getFutureMassList();
 }

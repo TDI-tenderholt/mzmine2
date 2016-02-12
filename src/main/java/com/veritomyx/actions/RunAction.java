@@ -3,6 +3,8 @@ package com.veritomyx.actions;
 public class RunAction extends BaseAction {
 	private final static String action = "RUN";
 
+	public final static String EXAMPLE_RESPONSE_1 = "{\"Action\":\"RUN\",\"Job\":\"P-504.1463\"}";
+
 	private String job;
 	private String RTO;
 	private String inputFilename;
@@ -61,7 +63,7 @@ public class RunAction extends BaseAction {
 	}
 
 	@Override
-	public int getErrorCode() {
+	public long getErrorCode() {
 		preCheck();
 		return super.getErrorCode();
 	}

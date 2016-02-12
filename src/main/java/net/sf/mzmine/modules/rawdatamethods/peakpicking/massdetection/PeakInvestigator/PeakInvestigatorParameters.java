@@ -21,8 +21,12 @@ package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInves
 
 import java.awt.Window;
 import java.lang.Math;
+import java.util.Arrays;
+import java.util.List;
 
 import com.veritomyx.PeakInvestigatorSaaS;
+import com.veritomyx.VeritomyxSettings;
+import com.veritomyx.actions.BaseAction.ResponseFormatException;
 import com.veritomyx.actions.PiVersionsAction;
 
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectorSetupDialog;
@@ -32,7 +36,9 @@ import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.util.ExitCode;
-import ucar.ma2.Range;
+import net.sf.mzmine.util.dialogs.DefaultDialogFactory;
+import net.sf.mzmine.util.dialogs.interfaces.DialogFactory;
+import net.sf.mzmine.util.dialogs.interfaces.BasicDialog;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
@@ -40,136 +46,249 @@ import net.sf.mzmine.desktop.preferences.MZminePreferences;
 
 public class PeakInvestigatorParameters extends SimpleParameterSet
 {
-	
-	private static String username;
-	private static String password;
-	private static int projectID;
-	private PeakInvestigatorSaaS webService = new PeakInvestigatorSaaS(MZmineCore.VtmxLive);
+	private final static int BAD_CREDENTIALS_ERROR_CODE = 3;
+	private static DialogFactory dialogFactory = new DefaultDialogFactory();
+
+	public final static String LAST_USED_STRING = "lastUsed";
 
 	public static final ComboParameter<String> versions = new ComboParameter<String>(
 			"PeakInvestigator™ version",
 			"The PeakInvestigator version to use for the analysis.",
-			new String[] {});
+			new String[] { LAST_USED_STRING });
 	public static final IntegerParameter minMass = new IntegerParameter(
-		    "Min Mass",
-		    "The minimum mass in the set of masses to send to the PeakInvestigator SaaS.",
+		    "Minimum m/z",
+		    "The minimum nominal m/z in the data to be used for analysis.",
 		    0);
 	public static final IntegerParameter maxMass = new IntegerParameter(
-		    "Max Mass",
-		    "The maximum mass in the set of masses to send to the PeakInvestigator SaaS.",
+		    "Maximum m/z",
+		    "The maximum nominal m/z in the data to be used for analysis.",
 		    Integer.MAX_VALUE);
-	
-	public static final BooleanParameter showLog = new BooleanParameter("Display Job Log", "Check this if you wan to display the PeakInvestigator job log when retrieving results");
-	public PeakInvestigatorParameters()
-	{
+
+	public static final BooleanParameter showLog = new BooleanParameter(
+			"Display Job Log",
+			"Check this if you want to display the PeakInvestigator job log when retrieving results");
+
+	public PeakInvestigatorParameters() {
 		super(new Parameter[] { versions, minMass, maxMass, showLog });
+
+		versions.setValue("lastUsed");
+		showLog.setValue(true);
 	}
 
-	public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired)
-	{
-		Integer maxMasses = 0, minMasses = Integer.MAX_VALUE;
+	public static void setDialogFactory(DialogFactory headlessDialogFactory) {
+		PeakInvestigatorParameters.dialogFactory = headlessDialogFactory;
+	}
 
-		if(!getCredentialsFromPreferences()) {
-			return ExitCode.CANCEL;
-		}
-
-		PiVersionsAction action = performPiVersionsCall();
-		if(action == null) {
+	public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
+		PiVersionsAction action = null;
+		try {
+			action = performPiVersionsCall(MZmineCore.getConfiguration()
+					.getPreferences());
+		} catch (ResponseFormatException e) {
+			e.printStackTrace();
 			return ExitCode.ERROR;
 		}
 
-		versions.setChoices(action.getVersions());
-
-		RawDataFile[] files = MZmineCore.getProjectManager().getCurrentProject().getDataFiles();
-		for(RawDataFile file : files) {
-		        int[] scanNumbers = file.getScanNumbers();
-			for(int scanNum : scanNumbers) {
-				Scan scan = file.getScan(scanNum);
-				int n,x;
-				x = (int)Math.ceil(scan.getDataPointMZRange().upperEndpoint());
-				maxMasses = Math.max(x, maxMasses);
-				n = (int)Math.floor(scan.getDataPointMZRange().lowerEndpoint());
-				minMasses = Math.min(n, minMasses);
-			}
+		if (action == null) {
+			return ExitCode.ERROR;
 		}
-		minMass.setMinMax(minMasses, maxMasses-1);
-		maxMass.setMinMax(minMasses+1, maxMasses);
-		showLog.setValue(true);
-		MassDetectorSetupDialog dialog = new MassDetectorSetupDialog(parent, valueCheckRequired, PeakInvestigatorDetector.class, this);
+
+		versions.setChoices(formatPiVersions(action));
+		setupMassParamters();
+
+		MassDetectorSetupDialog dialog = new MassDetectorSetupDialog(parent,
+				valueCheckRequired, PeakInvestigatorDetector.class, this);
 		dialog.setVisible(true);
+
 		return dialog.getExitCode();
 	}
 
-	/**
-	 * Get credentials stored in preferences. If the credentials are not valid,
-	 * show a dialog.
-	 * 
-	 * @return false if credentials are not valid, and user doesn't set new
-	 *         valid ones; otherwise, true.
-	 */
-	protected boolean getCredentialsFromPreferences() {
-		// pickup all the parameters
-		MZminePreferences preferences = MZmineCore.getConfiguration()
-				.getPreferences();
-		username = preferences.getParameter(MZminePreferences.vtmxUsername)
-				.getValue();
-		password = preferences.getParameter(MZminePreferences.vtmxPassword)
-				.getValue();
-		projectID = preferences.getParameter(MZminePreferences.vtmxProject)
-				.getValue();
+	private void setupMassParamters() {
+		RawDataFile[] files = MZmineCore.getProjectManager()
+				.getCurrentProject().getDataFiles();
+		int[] massRange = determineMassRangeFromData(files);
 
-		if ((username == null) || username.isEmpty() || (password == null)
-				|| password.isEmpty()) {
-			if (preferences.showSetupDialog(MZmineCore.getDesktop()
-					.getMainWindow(), false) != ExitCode.OK)
-				return false;
-			username = preferences.getParameter(MZminePreferences.vtmxUsername)
-					.getValue();
-			password = preferences.getParameter(MZminePreferences.vtmxPassword)
-					.getValue();
-			projectID = preferences.getParameter(MZminePreferences.vtmxProject)
-					.getValue();
+		minMass.setValue(massRange[0]);
+		minMass.setMinMax(massRange[0], massRange[1] - 1);
+
+		maxMass.setValue(massRange[1]);
+		maxMass.setMinMax(massRange[0] + 1, massRange[1]);
+	}
+
+	/**
+	 * Convenience function to determine the encompassing mass range in scans
+	 * across files.
+	 * 
+	 * @param files
+	 *            Array of RawDataFiles.
+	 * @return int[2] massRange: lower and upper m/z
+	 */
+	protected static int[] determineMassRangeFromData(RawDataFile[] files) {
+		int[] massRange = new int[] { Integer.MAX_VALUE, 0 };
+
+		if (files.length == 0) {
+			return massRange;
 		}
 
-		return true;
+		for (RawDataFile file : files) {
+			int[] scanNumbers = file.getScanNumbers();
+			for (int scanNum : scanNumbers) {
+				Scan scan = file.getScan(scanNum);
+
+				// determine minimum value
+				int value = (int) Math.floor(scan.getDataPointMZRange()
+						.lowerEndpoint());
+				if (value < massRange[0]) {
+					massRange[0] = value;
+				}
+
+				value = (int) Math.ceil(scan.getDataPointMZRange()
+						.upperEndpoint());
+				if (value > massRange[1]) {
+					massRange[1] = value;
+				}
+
+			}
+		}
+
+		return massRange;
+	}
+
+	/**
+	 * Convenience function to create a list of versions that identifies which,
+	 * if any, are the current versions and previously used versions.
+	 * 
+	 * @param action
+	 *            Valid PiVersionsAction that contains list of versions.
+	 * @return List of versions with identifications appended
+	 */
+	protected static String[] formatPiVersions(PiVersionsAction action) {
+		List<String> choices = Arrays.asList(action.getVersions());
+		int currentIndex = choices.indexOf((String) action.getCurrentVersion());
+		int lastIndex = choices.indexOf((String) action.getLastUsedVersion());
+		if (currentIndex >= 0 && lastIndex == currentIndex) {
+			String newString = choices.get(currentIndex)
+					+ " (current and last used)";
+			choices.set(currentIndex, newString);
+		} else {
+			if (currentIndex >= 0) {
+				String newString = choices.get(currentIndex) + " (current)";
+				choices.set(currentIndex, newString);
+			}
+			if (lastIndex >= 0) {
+				String newString = choices.get(lastIndex) + " (last used)";
+				choices.set(lastIndex, newString);
+			}
+		}
+
+		return choices.toArray(new String[choices.size()]);
 	}
 
 	/**
 	 * Make a call into PI_VERSIONS API to have a list of PeakInvestigator
-	 * versions available. This also checks that credentials are correct.
+	 * versions available. This also checks that credentials are correct. This
+	 * uses the version of the method that takes more parameters, using sensible
+	 * defaults.
+	 * 
+	 * @param preferences
+	 *            A MZminePreferences object to get Veritomyx credentials.
 	 * 
 	 * @return An object containing response from server, or null if credentials
 	 *         are wrong and not corrected by the user.
+	 * @throws ResponseFormatException
 	 */
-	protected PiVersionsAction performPiVersionsCall() {
+	public static PiVersionsAction performPiVersionsCall(
+			MZminePreferences preferences) throws ResponseFormatException {
+
+		VeritomyxSettings settings = preferences.getVeritomyxSettings();
+		PeakInvestigatorSaaS webService = new PeakInvestigatorSaaS(
+				settings.server);
+		return performPiVersionsCall(preferences, webService, MZmineCore
+				.getDesktop().getMainWindow());
+	}
+
+	/**
+	 * Make a call into PI_VERSIONS API to have a list of PeakInvestigator
+	 * versions available. This also checks that credentials are correct. This
+	 * function takes more arguments than necessary to make it testable.
+	 * 
+	 * @param preferences
+	 *            A MZminePreferences instance to get Veritomyx credentials
+	 *            from, and display dialog if credentials are incorrect.
+	 * @param webService
+	 *            A PeakInvestigatorSaaS instance for making calls to the public
+	 *            API
+	 * @param widnow
+	 *            A generic window object (hack to make testable)
+	 * 
+	 * @return An object containing response from server, or null if credentials
+	 *         are wrong and not corrected by the user.
+	 * @throws ResponseFormatException
+	 */
+	protected static PiVersionsAction performPiVersionsCall(
+			MZminePreferences preferences, PeakInvestigatorSaaS webService,
+			Window window) throws ResponseFormatException {
+
+		VeritomyxSettings settings = preferences.getVeritomyxSettings();
 		PiVersionsAction action = new PiVersionsAction(
-				PeakInvestigatorSaaS.API_VERSION, username, password);
-		webService.executeAction(action);
-		if(!action.isReady("PI_VERSIONS")) {
+				PeakInvestigatorSaaS.API_VERSION, settings.username,
+				settings.password);
+
+		String response = webService.executeAction(action);
+		action.processResponse(response);
+		if (!action.isReady("PI_VERSIONS")) {
 			return null;
 		}
 
-		while(action.hasError()) {
-			String errorMessage = action.getErrorMessage();
-			int code = action.getErrorCode();
-			MZmineCore.getDesktop().displayErrorMessage(
-					MZmineCore.getDesktop().getMainWindow(), "Error",
-					errorMessage);
-			if ((code != PeakInvestigatorSaaS.W_ERROR_LOGIN) && (code != PeakInvestigatorSaaS.W_ERROR_PID))
+		while (action.hasError()) {
+			BasicDialog dialog = dialogFactory.createDialog();
+			dialog.displayErrorMessage(action.getErrorMessage(), null);
+
+			long code = action.getErrorCode();
+			// Check if error is credentials problem
+			if (code != BAD_CREDENTIALS_ERROR_CODE) {
+				return null;
+			}
+
+			if (preferences.showSetupDialog(window, false) != ExitCode.OK)
 				return null;
 
-			MZminePreferences preferences = MZmineCore.getConfiguration()
-					.getPreferences();
-			if (preferences.showSetupDialog(MZmineCore.getDesktop().getMainWindow(), false) != ExitCode.OK)
-				return null;
-			username = preferences.getParameter(MZminePreferences.vtmxUsername).getValue();
-			password = preferences.getParameter(MZminePreferences.vtmxPassword).getValue();
-			projectID      = preferences.getParameter(MZminePreferences.vtmxProject).getValue();
+			settings = preferences.getVeritomyxSettings();
 
 			action = new PiVersionsAction(PeakInvestigatorSaaS.API_VERSION,
-					username, password);
+					settings.username, settings.password);
+			response = webService.executeAction(action);
+			action.processResponse(response);
 		}
 
 		return action;
+	}
+
+	public String getPiVersion() {
+		String version = getParameter(versions).getValue();
+		if (version.contains("(")) {
+			int index = version.indexOf("(");
+			return version.substring(0, index - 1);
+		}
+
+		return version;
+	}
+
+	public int[] getMassRange() {
+		int minMassValue = getParameter(minMass).getValue();
+		int maxMassValue = getParameter(maxMass).getValue();
+
+		// if we still have default (0, MAX_VALUE), then calculate
+		if (minMassValue == 0 && maxMassValue == Integer.MAX_VALUE) {
+			RawDataFile[] files = MZmineCore.getProjectManager()
+					.getCurrentProject().getDataFiles();
+			return determineMassRangeFromData(files);
+		}
+
+		return new int[] { minMass.getValue(), maxMass.getValue() };
+	}
+
+	public boolean shouldDisplayLog() {
+		return showLog.getValue();
 	}
 }

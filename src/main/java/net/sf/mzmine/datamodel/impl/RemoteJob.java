@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 Veritomyx Inc.
+ * Copyright 2013-2016 Veritomyx Inc.
  * 
  * This file is part of MZmine 2.
  * 
@@ -19,10 +19,7 @@
 
 package net.sf.mzmine.datamodel.impl;
 
-import com.veritomyx.PeakInvestigatorSaaS;
 import net.sf.mzmine.datamodel.RemoteJobInfo;
-import net.sf.mzmine.desktop.preferences.MZminePreferences;
-import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.datamodel.RawDataFile;
 
 /**
@@ -30,36 +27,66 @@ import net.sf.mzmine.datamodel.RawDataFile;
  */
 public class RemoteJob implements RemoteJobInfo
 {
+	public enum Status { ERROR, RUNNING, DONE, DELETED };
+
 	private String        jobID;
 	private RawDataFile   rawDataFile;
-	private String        targetName;
-	private PeakInvestigatorSaaS vtmx;
+	private String        futureMassList;
 	
-	public RemoteJob(String name, RawDataFile raw, String target, PeakInvestigatorSaaS vtmxConn)
+	public RemoteJob(String jobID, RawDataFile raw, String futureMassList)
 	{
-		jobID       = name;
-		rawDataFile = raw;
-		targetName  = target;
-//		if (vtmx != null)
-			vtmx = vtmxConn;
-//		else
-//			this.vtmx = new VeritomyxSaaS(username, password, pid, name);
+		this.jobID       = jobID;
+		this.rawDataFile = raw;
+		this.futureMassList  = futureMassList;
 	}
 
-    public String      getName()        { return jobID; }
-    public String      toString()       { return jobID; }
-    public RawDataFile getRawDataFile() { return rawDataFile; }
-    public String      getTargetName()  { return targetName; }
-    public int         getStatus()      { return (vtmx != null) ? vtmx.getPageStatus() : PeakInvestigatorSaaS.W_UNDEFINED; }
-    
-    public int 			deleteJob() {
-    	if(vtmx == null)
-    		vtmx = new PeakInvestigatorSaaS(true);
-    	MZminePreferences preferences = MZmineCore.getConfiguration().getPreferences();
-		String username = preferences.getParameter(MZminePreferences.vtmxUsername).getValue();
-		String password = preferences.getParameter(MZminePreferences.vtmxPassword).getValue();
-		Integer account  = preferences.getParameter(MZminePreferences.vtmxProject).getValue();
-		
-    	return vtmx.deleteJob(username, password, account, jobID.substring(4));
-    }
+	public String getJobID() {
+		return jobID;
+	}
+
+	public String toString() {
+		return jobID;
+	}
+
+	public String getCompoundName() {
+		return "|" + jobID + "[" + futureMassList + "]";
+	}
+
+	/**
+	 * Given a compound name that identifies a job and its target (i.e. future
+	 * mass list), return the job name.
+	 * 
+	 * @param compoundName
+	 *            Takes the form "|job-####-###[target]".
+	 * @return (e.g. ####-###)
+	 */
+	public static String filterJobName(String compoundName) {
+		if (compoundName.startsWith("|job-"))
+			return compoundName.substring(5, compoundName.indexOf('['));
+		return null;
+	}
+
+	/**
+	 * Given a compound name that identifies a job and its target (i.e. future
+	 * mass list), return the target name.
+	 * 
+	 * @param compoundName
+	 *            Takes the form "|job-####-###[target]".
+	 * @return (e.g. target)
+	 */
+	public static String filterTargetName(String compoundName) {
+		if (compoundName.startsWith("|job-"))
+			return compoundName.substring(compoundName.indexOf('[') + 1,
+					compoundName.indexOf(']'));
+		return compoundName;
+	}
+
+	public RawDataFile getRawDataFile() {
+		return rawDataFile;
+	}
+
+	public String getFutureMassList() {
+		return futureMassList;
+	}
+
 }

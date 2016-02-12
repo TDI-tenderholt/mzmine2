@@ -17,7 +17,7 @@
  * St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator;
+package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.dialogs;
 
 import java.awt.Dialog;
 import java.awt.Dimension;
@@ -29,10 +29,16 @@ import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 
+import org.apache.batik.ext.swing.GridBagConstants;
+import org.json.simple.parser.ParseException;
+
+import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.InitAction;
 import com.veritomyx.actions.InitAction.ResponseTimeCosts;
 
 import net.sf.mzmine.main.MZmineCore;
@@ -41,19 +47,19 @@ import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.GUIUtils;
 import net.sf.mzmine.util.components.GridBagPanel;
 
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * This dialog is presented at the start of a PeakInvestigator run. It shows the
- * user the current selected version of PeakInvestigator, and the associated
- * estimated costs for various MS types and Response Time Objectives (RTOs). It
- * also allows the user to select the desired RTO.
+ * This dialog is presented at the start of a PeakInvestigator run so the user
+ * can selected the desired Response Time Objective (RTO). It shows the the
+ * associated estimated costs for various MS types and RTOs.
  */
-public class PeakInvestigatorInitDialog extends JDialog implements ActionListener {
+public class PeakInvestigatorInitDialog extends JDialog implements InitDialog, ActionListener {
 
     private static final long serialVersionUID = 1L;
+
+    private static final Dimension SMALL_SIZE_XY = new Dimension(5, 5);
+    private static final Dimension SMALL_SIZE_X = new Dimension(5, 0);
 
     private ExitCode exitCode = ExitCode.UNKNOWN;
 
@@ -67,24 +73,16 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
     private JButton btnDetails;
 
     // Passed-in values needed later
-    protected Double availableFunds;
-    Map<String, ResponseTimeCosts> estimatedCosts = null;
+	private InitAction action;
 
-    // Required in more than one place, so lazily constructed
-    protected String[] responseTimeObjectives = null;
-
-	public PeakInvestigatorInitDialog(Window parent, String version,
-			double funds, Map<String, ResponseTimeCosts> estimatedCosts) {
-
+	public PeakInvestigatorInitDialog(Window parent, String version, InitAction action) {
 		super(parent, Dialog.ModalityType.DOCUMENT_MODAL);
 		setTitle("PeakInvestigator " + version);
 
-		this.estimatedCosts = estimatedCosts;
-		this.availableFunds = funds;
+		this.action = action;
 
-		addDialogComponents(version, availableFunds, estimatedCosts);
+		addDialogComponents(version, action.getFunds(), action.getEstimatedCosts());
 		setLocationRelativeTo(parent);
-
 	}
 
     /**
@@ -107,28 +105,28 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
 		mainPanel = new GridBagPanel();
 
 		JPanel quotationArea = buildPriceQuotationArea(estimatedCosts);
-		mainPanel.addCenter(quotationArea, 0, 1, 3, estimatedCosts.size() + 2);
+		mainPanel.add(quotationArea, 0, 0, 1, 1, 1, 1, GridBagConstants.BOTH);
 
 		JPanel fundsArea = buildFundsArea(funds);
-		mainPanel.addCenter(fundsArea, 0, 50, 3, 1);
+		mainPanel.add(fundsArea, 0, 1, 1, 1, 1, 1, GridBagConstants.BOTH);
 
-		JPanel comboBoxArea = buildComboBoxArea(getResponseTimeObjectives(estimatedCosts));
-		mainPanel.addCenter(comboBoxArea, 0, 51, 3, 1);
+		JPanel comboBoxArea = buildComboBoxArea(action.getResponseTimeObjectives());
+		mainPanel.add(comboBoxArea, 0, 2, 1, 1, 1, 1, GridBagConstants.BOTH);
 
 		// Create a separate panel for the buttons
 		JPanel pnlButtons = new JPanel();
 
-		btnOK = GUIUtils.addButton(pnlButtons, "OK", null, this);
-		btnCancel = GUIUtils.addButton(pnlButtons, "Cancel", null, this);
 		btnDetails = GUIUtils.addButton(pnlButtons,
-				"Price quotation details...", null, this);
+				"Price Quotation Details...", null, this);
+		btnCancel = GUIUtils.addButton(pnlButtons, "Cancel", null, this);
+		btnOK = GUIUtils.addButton(pnlButtons, "Purchase", null, this);
 
 		/*
 		 * Last row in the table will be occupied by the buttons. We set the row
 		 * number to 100 and width to 3, spanning the 3 component columns
 		 * defined above.
 		 */
-		mainPanel.addCenter(pnlButtons, 0, 100, 3, 1);
+		mainPanel.addCenter(pnlButtons, 0, 100, 1, 1);
 
 		// Add some space around the widgets
 		GUIUtils.addMargin(mainPanel, 10);
@@ -151,32 +149,36 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
 //	}
 
    private JPanel buildPriceQuotationArea(Map<String, ResponseTimeCosts> estimatedCosts) {
-    	JPanel panel = new JPanel();
-    	String[] RTOs = getResponseTimeObjectives(estimatedCosts);
-        String[] machineTypes = getMachineTypes(estimatedCosts);
+		JPanel panel = new JPanel();
+		String[] RTOs = action.getResponseTimeObjectives();
+		String[] machineTypes = action.getMSTypes();
         
         if (RTOs.length == 0 || machineTypes.length == 0) {
         	return panel;
         }
     	
-        panel.setBorder(BorderFactory.createTitledBorder("Price quotation"));
+        panel.setBorder(BorderFactory.createTitledBorder("Levels of Service"));
         
-        final int columnStart = 1;
+        final int columnStart = 3;
         GridBagPanel grid = new GridBagPanel();
-        grid.add(new JLabel("Response Time Objective:"), 0, 0);
+        grid.add(new JLabel("Response Time Objective (≤ xx hrs):"), 0, 0, 3, 1);
         for (int i = 0; i < RTOs.length; i++) {
-        	grid.add(new JLabel(RTOs[i]), columnStart + i, 0);
+			grid.add(Box.createRigidArea(SMALL_SIZE_X), columnStart + 2 * i, 0);
+			grid.addCenter(new JLabel(RTOs[i]), columnStart + 2 * i + 1, 0, 1, 1);
         }
-        
-        grid.add(new JLabel("MS Type"), 0, 1);
-        grid.add(Box.createVerticalStrut(1), 0, 2, 3, 0, 0, 1);
+
+        grid.add(Box.createRigidArea(SMALL_SIZE_XY), 0, 1);
+        grid.add(new JLabel("Price Quotation:"), 0, 2, 3, 1);
         final int rowStart = 3;
         for (int i = 0; i < machineTypes.length; i++) {
-        	grid.add(new JLabel(machineTypes[i]), 0, rowStart + i);
+			grid.add(new JLabel(machineTypes[i]), 1, rowStart + i);
         	ResponseTimeCosts costs = estimatedCosts.get(machineTypes[i]);
         	for (int j = 0; j < costs.size(); j++) {
-        		String text = String.format("$%.2f", costs.getCost(RTOs[j]));
-        		grid.add(new JLabel(text), columnStart + j, rowStart + i);
+				String text = String.format("$%,.2f", costs.getCost(RTOs[j]));
+				grid.add(Box.createRigidArea(SMALL_SIZE_X),
+						columnStart + 2 * j, rowStart + 1);
+				grid.addCenter(new JLabel(text), columnStart + 2 * j + 1, rowStart
+						+ i, 1, 1);
         	}
         }
         
@@ -186,11 +188,10 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
     
 	private JPanel buildFundsArea(Double funds) {
 		JPanel panel = new JPanel();
-		panel.setBorder(BorderFactory.createTitledBorder("Customer account"));
+		panel.setBorder(BorderFactory.createTitledBorder("Customer Account"));
 
 		GridBagPanel grid = new GridBagPanel();
-		grid.add(new JLabel("Current balance:"), 0, 1);
-		grid.add(new JLabel(String.format("$%.2f", funds)), 1, 1);
+		grid.add(new JLabel(String.format("Available Balance: $%,.2f", funds)), 0, 0);
 
 		panel.add(grid);
 		return panel;
@@ -200,7 +201,7 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
 		JPanel panel = new JPanel();
 
 		GridBagPanel grid = new GridBagPanel();
-		grid.add(new JLabel("Desired RTO:"), 0, 0);
+		grid.add(new JLabel("Select Level of Service:"), 0, 0);
 		responseTimeObjectiveComboBox = new JComboBox<String>(RTOs);
 		grid.add(responseTimeObjectiveComboBox, 1, 0);
 
@@ -223,7 +224,7 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
 	private void handleOkButton() {
 		String selectedRTO = responseTimeObjectiveComboBox.getSelectedItem()
 				.toString();
-		if (determineMaxPotentialCost(estimatedCosts, selectedRTO) > availableFunds) {
+		if (action.getMaxPotentialCost(selectedRTO) > action.getFunds()) {
 			String mesg = "The selected RTO requires more funds than are currently available in your account.";
 			MZmineCore.getDesktop().displayErrorMessage(
 					MZmineCore.getDesktop().getMainWindow(), "Error", mesg);
@@ -259,49 +260,34 @@ public class PeakInvestigatorInitDialog extends JDialog implements ActionListene
         return responseTimeObjectiveComboBox.getSelectedItem().toString();
     }
 
-    private String[] getMachineTypes(Map<String, ResponseTimeCosts> estimatedCosts) {
-    	Set<String> keys = estimatedCosts.keySet();
-    	return keys.toArray(new String[keys.size()]);
-    }
-    
-	/**
-	 * Convenience function to get the Response Time Objectives. Assumes that
-	 * each ResponseTimeCosts value have exactly the same number and name of
-	 * RTO. This function lazily instantiates the reponseTimeObjective variable.
-	 * 
-	 * @param estimatedCosts
-	 *            As returned from InitAction.getEstimatedCosts()
-	 * @return List of strings corresponding to RTOs (e.g. "RTO-24", "RTO-0",
-	 *         etc.)
-	 */
-	private String[] getResponseTimeObjectives(Map<String, ResponseTimeCosts> estimatedCosts) {
-		if (responseTimeObjectives != null) {
-			return responseTimeObjectives;
+	private static void createAndShowWindow()
+			throws UnsupportedOperationException, ParseException {
+		InitAction action = InitAction.create("3.0", "adam", "password");
+		try {
+			action.processResponse("{\"Action\":\"INIT\",\"Job\":\"V-504.1461\",\"SubProjectID\":504,\"Funds\":1150.01,\"EstimatedCost\":{\"TOF\":{\"RTO-24\":0.6,\"RTO-0\":1200.00},\"Orbitrap\":{\"RTO-24\":0.85, \"RTO-0\":24.00},\"Iontrap\":{\"RTO-24\":1.02,\"RTO-0\":26.00}}}");
+		} catch (ResponseFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(-1);
 		}
-
-		ArrayList<ResponseTimeCosts> costs = new ArrayList<>(
-				estimatedCosts.values());
-		if (costs.size() == 0) {
-			responseTimeObjectives = new String[] {};
-			return new String[] {};
-		} else {
-			Set<String> RTOs = costs.get(0).keySet();
-			responseTimeObjectives = RTOs.toArray(new String[RTOs.size()]);
-		}
-
-		return responseTimeObjectives;
+		PeakInvestigatorInitDialog dialog = new PeakInvestigatorInitDialog(
+				null, "1.2", action);
+		dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		dialog.setVisible(true);
 	}
-	
-	protected double determineMaxPotentialCost(Map<String, ResponseTimeCosts> estimatedCosts, String RTO) {
-		double maxCost = 0;
-		for (ResponseTimeCosts costs : estimatedCosts.values()) {
-			double cost = costs.getCost(RTO);
-			if (maxCost > cost) {
-				maxCost = cost;
-			}
-		}
 
-		return maxCost;
+	public static void main(String args[]) {
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					createAndShowWindow();
+				} catch (UnsupportedOperationException e) {
+					e.printStackTrace();
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 }

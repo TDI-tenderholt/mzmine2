@@ -11,6 +11,13 @@ import org.json.simple.parser.ParseException;
 public abstract class BaseAction {
 	private static final String DATE_FORMAT = "yyyy-MM-dd kk:mm:ss";
 
+	/** Test Strings */
+	public static final String API_SOURCE = "<html><head>\n"
+			+ "<!--\n"
+			+ "// ===================================================================\n"
+			+ "// Veritomyx";
+	public static final String ERROR_CREDENTIALS = "{\"Action\":\"ACTION\",\"Error\":3,\"Message\":\"Invalid username or password - can not validate\",\"Location\":\"\"}";
+
 	protected String versionOfApi = null;
 	protected String user = null;
 	protected String code = null;
@@ -37,15 +44,18 @@ public abstract class BaseAction {
 		responseObject = null;
 	}
 
-	public void processResponse(String response)
-			throws UnsupportedOperationException, ParseException {
+	public void processResponse(String response) throws ResponseFormatException {
 		if (response.startsWith("<")) {
-			throw new UnsupportedOperationException(
-					"Server response appears to be HTML/XML.");
+			throw new ResponseFormatException(
+					"Server response appears to be HTML/XML: " + response.substring(0, 15), this);
 		}
 
 		JSONParser parser = new JSONParser();
-		responseObject = (JSONObject) parser.parse(response);
+		try {
+			responseObject = (JSONObject) parser.parse(response);
+		} catch (ParseException e) {
+			throw new ResponseFormatException("Problem parsing JSON: " + e.getMessage(), this);
+		}
 	}
 
 	public boolean isReady(String action) throws IllegalStateException {
@@ -73,8 +83,12 @@ public abstract class BaseAction {
 		return getStringAttribute("Message");
 	}
 
-	public int getErrorCode() {
-		return getIntAttribute("Error");
+	public long getErrorCode() {
+		if (responseObject.containsKey("Error")) {
+			return getLongAttribute("Error");
+		}
+
+		return 0;
 	}
 
 	public String getStringAttribute(String attribute) {
@@ -112,4 +126,22 @@ public abstract class BaseAction {
 		return retval;
 	}
 
+	public class ResponseFormatException extends Exception {
+		private BaseAction action = null;
+
+		public ResponseFormatException(String message, BaseAction action) {
+			super(message);
+			this.action = action;
+		}
+
+		public ResponseFormatException(String message, BaseAction action,
+				Throwable cause) {
+			super(message, cause);
+			this.action = action;
+		}
+
+		public BaseAction getAction() {
+			return action;
+		}
+	}
 }
