@@ -101,11 +101,11 @@ public class PeakInvestigatorDetector implements MassDetector
 	 *            centroiding. When retrieving job, name of job plus mass list
 	 *            (e.g. |job-C-1022.1483[PI]).
 	 * @param parameters
-	 * @param scanCount
+	 * @param scans
 	 * @return
 	 */
 	public String startMassValuesJob(RawDataFile raw, String name,
-			ParameterSet parameterSet, int scanCount) {
+			ParameterSet parameterSet, Scan[] scans) {
 
 		MZminePreferences preferences = MZmineCore.getConfiguration()
 				.getPreferences();
@@ -128,7 +128,7 @@ public class PeakInvestigatorDetector implements MassDetector
 				logger.info(String.format(
 						"Starting analysis on mass range %d - %d.",
 						massRange[0], massRange[1]));
-				job.initializeSubmit(selectedPiVersion, scanCount,
+				job.initializeSubmit(selectedPiVersion, scans,
 						parameters.getMassRange(), filterTargetName(name));
 			} else {
 				logger.info("Checking status of job.");

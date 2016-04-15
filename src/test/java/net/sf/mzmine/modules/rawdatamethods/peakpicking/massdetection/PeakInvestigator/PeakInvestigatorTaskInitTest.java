@@ -4,6 +4,10 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.MassList;
+import net.sf.mzmine.datamodel.MassSpectrumType;
+import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.RemoteJob;
@@ -25,6 +29,7 @@ import org.mockito.ArgumentMatcher;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 
+import com.google.common.collect.Range;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpProgressMonitor;
 import com.veritomyx.PeakInvestigatorSaaS;
@@ -37,6 +42,141 @@ public class PeakInvestigatorTaskInitTest {
 
 	@Rule public ExpectedException thrown = ExpectedException.none();
 
+	private class TestScan implements Scan
+	{
+
+		@Override
+		public Range<Double> getDataPointMZRange() {
+			return null;
+		}
+
+		@Override
+		public DataPoint getHighestDataPoint() {
+			return null;
+		}
+
+		@Override
+		public MassSpectrumType getSpectrumType() {
+			return null;
+		}
+
+		@Override
+		public int getNumberOfDataPoints() {
+			return 0;
+		}
+
+		@Override
+		public DataPoint[] getDataPoints() {
+			return null;
+		}
+
+		@Override
+		public DataPoint[] getDataPointsByMass(Range<Double> mzRange) {
+			return null;
+		}
+
+		@Override
+		public DataPoint[] getDataPointsOverIntensity(double intensity) {
+			return null;
+		}
+
+		@Override
+		public RawDataFile getDataFile() {
+			return null;
+		}
+
+		@Override
+		public int getScanNumber() {
+			return 0;
+		}
+
+		@Override
+		public String getScanDefinition() {
+			return null;
+		}
+
+		@Override
+		public int getMSLevel() {
+			return 0;
+		}
+
+		@Override
+		public double getRetentionTime() {
+			return 0;
+		}
+
+		@Override
+		public Range<Double> getScanningMZRange() {
+			return null;
+		}
+
+		@Override
+		public DataPoint getBasePeak() {
+			return null;
+		}
+
+		@Override
+		public double getTIC() {
+			return 0;
+		}
+
+		@Override
+		public boolean isCentroided() {
+			return false;
+		}
+
+		@Override
+		public double getPrecursorMZ() {
+			return 0;
+		}
+
+		@Override
+		public PolarityType getPolarity() {
+			return null;
+		}
+
+		@Override
+		public int getPrecursorCharge() {
+			return 0;
+		}
+
+		@Override
+		public int[] getFragmentScanNumbers() {
+			return null;
+		}
+
+		@Override
+		public MassList[] getMassLists() {
+			return null;
+		}
+
+		@Override
+		public MassList getMassList(String name) {
+			return null;
+		}
+
+		@Override
+		public void addMassList(MassList massList) {
+
+		}
+
+		@Override
+		public void removeMassList(MassList massList) {
+
+		}
+
+		@Override
+		public String exportFilename(String massListName) {
+			return null;
+		}
+
+		@Override
+		public int exportToFile(String massListName, String saveDirectory,
+				String filename) {
+			return 0;
+		}
+
+	}
 	/**
 	 * Test PeakInvestigatorTask.initialize() with real response and OK click on
 	 * dialog.
@@ -46,10 +186,13 @@ public class PeakInvestigatorTaskInitTest {
 			ResponseFormatException, ResponseErrorException, JSchException,
 			IOException {
 
+		Scan scan1 = new TestScan();
+		Scan scan2 = new TestScan();
+
 		PeakInvestigatorTask task = createDefaultSubmitTask(
 				InitAction.EXAMPLE_RESPONSE_1).usingDialogFactory(
 				new EmptyOkDialogFactory());
-		task.initializeSubmit("1.2", 2, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
 
 		assertEquals("V-504.1551", task.getName());
 	}
@@ -63,10 +206,13 @@ public class PeakInvestigatorTaskInitTest {
 			ResponseFormatException, ResponseErrorException, JSchException,
 			IOException {
 
+		Scan scan1 = new TestScan();
+		Scan scan2 = new TestScan();
+
 		PeakInvestigatorTask task = createDefaultSubmitTask(
 				InitAction.EXAMPLE_RESPONSE_1).usingDialogFactory(
 				new EmptyCancelDialogFactory());
-		task.initializeSubmit("1.2", 2, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
 
 		assertEquals(null, task.getName());
 	}
@@ -82,9 +228,12 @@ public class PeakInvestigatorTaskInitTest {
 		thrown.expect(ResponseFormatException.class);
 		thrown.expectMessage("Server response appears to be HTML/XML");
 
+		Scan scan1 = new TestScan();
+		Scan scan2 = new TestScan();
+
 		PeakInvestigatorTask task = createDefaultSubmitTask(BaseAction.API_SOURCE)
 				.usingDialogFactory(new EmptyOkDialogFactory());
-		task.initializeSubmit("1.2", 2, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
 
 		fail("Should not reach here.");
 	}
@@ -100,13 +249,16 @@ public class PeakInvestigatorTaskInitTest {
 		thrown.expect(ResponseErrorException.class);
 		thrown.expectMessage("Invalid username or password");
 
+		Scan scan1 = new TestScan();
+		Scan scan2 = new TestScan();
+
 		PeakInvestigatorDialogFactory factory = new EmptyOkDialogFactory();
 		String response = BaseAction.ERROR_CREDENTIALS
 				.replace("ACTION", "INIT");
 
 		PeakInvestigatorTask task = createDefaultSubmitTask(response)
 				.usingDialogFactory(factory);
-		task.initializeSubmit("1.2", 2, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
 
 		fail("Should not reach here.");
 	}

@@ -137,7 +137,7 @@ public class PeakInvestigatorTask
 		return this;
 	}
 
-	public void initializeSubmit(String versionOfPi, int scanCount, int[] massRange,
+	public void initializeSubmit(String versionOfPi, Scan[] scans, int[] massRange,
 			String target) throws ResponseFormatException,
 			ResponseErrorException, IllegalStateException, IOException {
 
@@ -150,8 +150,8 @@ public class PeakInvestigatorTask
 		InitAction initAction = InitAction
 				.create(PeakInvestigatorSaaS.API_VERSION, username, password)
 				.usingProjectId(projectID).withPiVersion(versionOfPi)
-				.withScanCount(scanCount, 0)
-				.withNumberOfPoints(getMaxNumberOfPoints(rawDataFile))
+				.withScanCount(scans.length, 0)
+				.withNumberOfPoints(getMaxNumberOfPoints(scans))
 				.withMassRange(massRange[0], massRange[1]);
 		String response = vtmx.executeAction(initAction);
 		initAction.processResponse(response);
@@ -728,11 +728,9 @@ public class PeakInvestigatorTask
 	 * @param rawData
 	 * @return number of data points (in scan with most data points)
 	 */
-	private int getMaxNumberOfPoints(RawDataFile rawData) {
-		int[] scanIndexes = rawData.getScanNumbers();
+	private int getMaxNumberOfPoints(Scan[] scans) {
 		int maxNumberOfPoints = 0;
-		for (int index : scanIndexes) {
-			Scan scan = rawData.getScan(index);
+		for (Scan scan : scans) {
 			int numberOfPoints = scan.getNumberOfDataPoints();
 			if (numberOfPoints > maxNumberOfPoints) {
 				maxNumberOfPoints = numberOfPoints;
