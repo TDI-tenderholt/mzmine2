@@ -497,6 +497,11 @@ This version has implemented the PeakInvestigator™ public API for peak (mass) 
 			<artifactId>msdk-io-mzml</artifactId>
 			<version>0.0.6</version>
 		</dependency>
+		<dependency>
+			<groupId>com.veritomyx</groupId>
+			<artifactId>peakinvestigator-sdk</artifactId>
+			<version>0.9</version>
+		</dependency>
 	</dependencies>
 
 </project>
