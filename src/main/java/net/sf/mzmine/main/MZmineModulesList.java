@@ -46,6 +46,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.Fo
 import net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpeaklist.FormulaPredictionPeakListModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.glycerophospholipidsearch.GPLipidSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.io.casmiimport.CasmiImportModule;
@@ -85,9 +86,9 @@ import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeFormulaCalculatorModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeMassCalculatorModule;
 import net.sf.mzmine.modules.visualization.histogram.HistogramVisualizerModule;
-import net.sf.mzmine.modules.visualization.ida.IDAVisualizerModule;
 import net.sf.mzmine.modules.visualization.infovisualizer.InfoVisualizerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
+import net.sf.mzmine.modules.visualization.msms.MsMsVisualizerModule;
 import net.sf.mzmine.modules.visualization.neutralloss.NeutralLossVisualizerModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.export.IsotopePatternExportModule;
@@ -161,12 +162,12 @@ public class MZmineModulesList {
             FragmentSearchModule.class, AdductSearchModule.class,
             ComplexSearchModule.class, OnlineDBSearchModule.class,
             GPLipidSearchModule.class, CameraSearchModule.class,
-            NistMsSearchModule.class, FormulaPredictionPeakListModule.class,
+            NistMsSearchModule.class, FormulaPredictionPeakListModule.class, Ms2SearchModule.class,
 
             // Visualizers
             TICVisualizerModule.class, SpectraVisualizerModule.class,
             TwoDVisualizerModule.class, ThreeDVisualizerModule.class,
-            IDAVisualizerModule.class, NeutralLossVisualizerModule.class,
+            MsMsVisualizerModule.class, NeutralLossVisualizerModule.class,
             PeakListTableModule.class, IsotopePatternExportModule.class,
             MSMSExportModule.class, ScatterPlotVisualizerModule.class,
             HistogramVisualizerModule.class, InfoVisualizerModule.class,

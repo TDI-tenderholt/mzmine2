@@ -4,17 +4,16 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.veritomyx</groupId>
 	<artifactId>mzmine-pi</artifactId>
-	<version>2.20</version>
+	<version>2.21</version>
 	<name>MZmine PeakInvestigator™ Edition</name>
 	<description>MZmine is an open-source project delivering a software for mass spectrometry data processing, with the main focus on LC-MS data.
 
 This version has implemented the PeakInvestigator™ public API for peak (mass) detection. See http://veritomyx.com for more information.</description>
 	<url>http://veritomyx.com/info/MZmine-Investigator-Edition.php</url>
-
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<cdk.version>1.5.12</cdk.version>
+		<cdk.version>1.5.13</cdk.version>
 		<jmztab.version>3.0.2</jmztab.version>
 	</properties>
 
@@ -104,6 +103,14 @@ This version has implemented the PeakInvestigator™ public API for peak (mass) 
 							<Implementation-Build>${buildNumber}</Implementation-Build>
 						</manifestEntries>
 					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<argLine>-Xmx1024m</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -488,7 +495,7 @@ This version has implemented the PeakInvestigator™ public API for peak (mass) 
 		<dependency>
 			<groupId>io.github.msdk</groupId>
 			<artifactId>msdk-io-mzml</artifactId>
-			<version>0.0.4</version>
+			<version>0.0.6</version>
 		</dependency>
 	</dependencies>
 
