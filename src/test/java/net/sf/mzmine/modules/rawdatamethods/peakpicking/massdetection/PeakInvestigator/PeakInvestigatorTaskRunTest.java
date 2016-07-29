@@ -33,7 +33,7 @@ public class PeakInvestigatorTaskRunTest {
 			IOException {
 
 		PeakInvestigatorTask task = createDefaultTask(RunAction.EXAMPLE_RESPONSE_1);
-		task.initiateRun("test.tar", "RTO-24");
+		task.initiateRun("test.tar", "RTO-24", null);
 
 		RunAction action = actionCaptor.getValue();
 		assertEquals("P-504.1463", action.getJob());
@@ -48,7 +48,7 @@ public class PeakInvestigatorTaskRunTest {
 			IOException {
 
 		PeakInvestigatorTask task = createDefaultTask(BaseAction.API_SOURCE);
-		task.initiateRun("test.tar", "RTO-24");
+		task.initiateRun("test.tar", "RTO-24", null);
 
 		fail("Should not reach here.");
 	}
@@ -65,7 +65,7 @@ public class PeakInvestigatorTaskRunTest {
 				.replace("ACTION", "RUN");
 
 		PeakInvestigatorTask task = createDefaultTask(response);
-		task.initiateRun("test.tar", "RTO-24");
+		task.initiateRun("test.tar", "RTO-24", null);
 
 		fail("Should not reach here.");
 	}

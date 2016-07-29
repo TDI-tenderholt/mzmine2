@@ -37,6 +37,9 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
+import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelection;
+import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelectionType;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.dialogs.DefaultDialogFactory;
 import net.sf.mzmine.util.dialogs.interfaces.DialogFactory;
@@ -66,12 +69,15 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 		    "The nominal ending m/z in the data to be used for analysis.",
 		    Integer.MAX_VALUE);
 
+	public static final CalibrationFilesParameter calibrationScans = new CalibrationFilesParameter(
+			new RawDataFilesSelection(RawDataFilesSelectionType.SPECIFIC_FILES));
+
 	public static final BooleanParameter showLog = new BooleanParameter(
 			"Display Job Log",
 			"Check this if you want to display the PeakInvestigator job log when retrieving results");
 
 	public PeakInvestigatorParameters() {
-		super(new Parameter[] { versions, startMass, endMass, showLog });
+		super(new Parameter[] { versions, calibrationScans, startMass, endMass, showLog });
 
 		versions.setValue("lastUsed");
 		showLog.setValue(true);
@@ -314,4 +320,5 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 	public boolean shouldDisplayLog() {
 		return showLog.getValue();
 	}
+
 }

@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
-
 import com.veritomyx.VeritomyxSettings;
 import com.veritomyx.actions.BaseAction.ResponseFormatException;
 import com.veritomyx.actions.PiVersionsAction;
@@ -113,11 +112,22 @@ public class PeakInvestigatorDetector implements MassDetector
 		PeakInvestigatorParameters parameters = (PeakInvestigatorParameters) parameterSet;
 		PeakInvestigatorTask job = null;
 
+		RawDataFile[] calibDataFiles = parameters
+				.getParameter(PeakInvestigatorParameters.calibrationScans)
+				.getValue().getMatchingRawDataFiles();
+		if (calibDataFiles.length > 1) {
+			error("Only 1 raw data file should be selected for calibration set");
+			return null;
+		}
+
 		try {
 
 			job = new PeakInvestigatorTask(settings.server,
 					settings.username, settings.password, settings.projectID)
 					.withRawDataFile(raw);
+			if (calibDataFiles.length == 1) {
+				job.withCalibDataFile(calibDataFiles[0]);
+			}
 
 			// not only does this get versions, it validates credentials
 			String selectedPiVersion = selectPiVersion(parameters,

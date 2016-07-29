@@ -88,6 +88,7 @@ public class PeakInvestigatorTask
 	// keep track of state (both submit and fetch)
 	private Boolean launch = null;
 	private RawDataFile rawDataFile = null;
+	private RawDataFile calibDataFile = null;
 	private String jobID = null;
 	private String targetName;
 
@@ -122,6 +123,11 @@ public class PeakInvestigatorTask
 		return this;
 	}
 
+	public PeakInvestigatorTask withCalibDataFile(RawDataFile calibDataFile) {
+		this.calibDataFile = calibDataFile;
+		return this;
+	}
+
 	public PeakInvestigatorTask shouldDisplayLog(boolean displayLog) {
 		this.displayLog = displayLog;
 		return this;
@@ -150,7 +156,7 @@ public class PeakInvestigatorTask
 		InitAction initAction = InitAction
 				.create(username, password, "MZmine2")
 				.usingProjectId(projectID).withPiVersion(versionOfPi)
-				.withScanCount(scans.length, 0)
+				.withScanCount(scans.length, calibDataFile == null ? 0 : calibDataFile.getNumOfScans())
 				.withNumberOfPoints(getMaxNumberOfPoints(scans))
 				.withMassRange(massRange[0], massRange[1], massRange[2], massRange[3]);
 		String response = vtmx.executeAction(initAction);
@@ -415,14 +421,14 @@ public class PeakInvestigatorTask
 		}
 	}
 
-	protected void initiateRun(String filename, String selectedRTO)
+	protected void initiateRun(String filename, String selectedRTO, String calibFilename)
 			throws ResponseFormatException, IllegalStateException,
 			ResponseErrorException, IOException {
 
 		logger.info("Launch job (RUN), " + jobID + ", on cloud server...");
 
 		RunAction runAction = new RunAction(username, password, jobID,
-				selectedRTO, filename, null);
+				selectedRTO, filename, calibFilename);
 		String response = vtmx.executeAction(runAction);
 		runAction.processResponse(response);
 
@@ -458,14 +464,54 @@ public class PeakInvestigatorTask
 
 		uploadFileToServer(workingFile);
 
-		initiateRun(workingFile.getName(), selectedRTO);
-		
+		File calibrationFile = null;
+		if (calibDataFile != null) {
+			calibrationFile = bundleCalibrationScans();
+			uploadFileToServer(calibrationFile);
+		}
+
+		initiateRun(workingFile.getName(), selectedRTO,
+				calibrationFile == null ? null : calibrationFile.getName());
+
 		// job was started - record it
 		logger.info("Job, " + jobID + ", launched");
 
 		rawDataFile.addJob("job-" + jobID, rawDataFile, targetName);	// record this job start
 
 		desc = "launch finished";
+	}
+
+	private File bundleCalibrationScans() throws IOException {
+		Path calibrationPath = workingDirectory.toPath().resolve(jobID + "calib.tar");
+		File calibrationFile = calibrationPath.toFile();
+		calibrationFile.deleteOnExit();
+
+		FileOutputStream stream = new FileOutputStream(calibrationFile);
+		tarfile = new TarOutputStream(new BufferedOutputStream(
+				new GZIPOutputStream(stream)));
+
+		for (int scan_num : calibDataFile.getScanNumbers()) {
+			Scan scan = calibDataFile.getScan(scan_num);
+			String filename = "calib_" + String.format("%04d", scan_num)
+					+ ".txt";
+			scan.exportToFile("", workingDirectory.toString(), filename);
+
+			// put the exported scan into the tar file
+			File f = new File(getFilenameWithPath(filename));
+			tarfile.putNextEntry(new TarEntry(f, filename));
+			BufferedInputStream origin = new BufferedInputStream(
+					new FileInputStream(f));
+			int count;
+			byte data[] = new byte[2048];
+			while ((count = origin.read(data)) != -1)
+				tarfile.write(data, 0, count);
+			origin.close();
+			f.delete(); // remove the local copy of the scan file
+			tarfile.flush();
+		}
+
+		tarfile.close();
+		return calibrationFile;
 	}
 
 	/**
