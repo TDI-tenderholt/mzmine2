@@ -84,8 +84,12 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 	public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
 		PiVersionsAction action = null;
 		try {
-			action = performPiVersionsCall(MZmineCore.getConfiguration()
-					.getPreferences());
+			if (System.getProperty("PeakInvestigatorParameters.noWeb") != null) {
+				action = simulatePiVersionsCall(null);
+			} else {
+				action = performPiVersionsCall(MZmineCore.getConfiguration()
+						.getPreferences());
+			}
 		} catch (ResponseFormatException | JSchException | IOException e) {
 			e.printStackTrace();
 			return ExitCode.ERROR;
@@ -265,6 +269,14 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 			action.processResponse(response);
 		}
 
+		return action;
+	}
+
+	public static PiVersionsAction simulatePiVersionsCall(
+			MZminePreferences preferences) throws ResponseFormatException {
+
+		PiVersionsAction action = new PiVersionsAction("username", "password");
+		action.processResponse("{\"Action\":\"PI_VERSIONS\", \"Current\":\"simulated\", \"LastUsed\":\"\", \"Count\":1, \"Versions\":[\"simulated\"]}");
 		return action;
 	}
 
