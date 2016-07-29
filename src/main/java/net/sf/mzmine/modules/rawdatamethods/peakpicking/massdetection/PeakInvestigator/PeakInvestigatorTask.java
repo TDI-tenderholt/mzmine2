@@ -148,11 +148,11 @@ public class PeakInvestigatorTask
 		desc    = "initializing";
 
 		InitAction initAction = InitAction
-				.create(PeakInvestigatorSaaS.API_VERSION, username, password)
+				.create(username, password, "MZmine2")
 				.usingProjectId(projectID).withPiVersion(versionOfPi)
 				.withScanCount(scans.length, 0)
 				.withNumberOfPoints(getMaxNumberOfPoints(scans))
-				.withMassRange(massRange[0], massRange[1]);
+				.withMassRange(massRange[0], massRange[1], massRange[2], massRange[3]);
 		String response = vtmx.executeAction(initAction);
 		initAction.processResponse(response);
 
@@ -207,8 +207,7 @@ public class PeakInvestigatorTask
 		this.jobID = RemoteJob.filterJobName(compoundJobName);
 		this.targetName = RemoteJob.filterTargetName(compoundJobName);
 
-		StatusAction action = new StatusAction(
-				PeakInvestigatorSaaS.API_VERSION, username, password, jobID);
+		StatusAction action = new StatusAction(username, password, jobID);
 		String response = vtmx.executeAction(action);
 		action.processResponse(response);
 
@@ -389,8 +388,7 @@ public class PeakInvestigatorTask
 		logger.info("Transmit scans bundle, " + file.getName()
 				+ ", to SFTP server...");
 
-		SftpAction sftpAction = new SftpAction(
-				PeakInvestigatorSaaS.API_VERSION, username, password, projectID);
+		SftpAction sftpAction = new SftpAction(username, password, projectID);
 		String response = vtmx.executeAction(sftpAction);
 		sftpAction.processResponse(response);
 
@@ -423,8 +421,8 @@ public class PeakInvestigatorTask
 
 		logger.info("Launch job (RUN), " + jobID + ", on cloud server...");
 
-		RunAction runAction = new RunAction(PeakInvestigatorSaaS.API_VERSION,
-				username, password, jobID, selectedRTO, filename, null);
+		RunAction runAction = new RunAction(username, password, jobID,
+				selectedRTO, filename, null);
 		String response = vtmx.executeAction(runAction);
 		runAction.processResponse(response);
 
@@ -518,8 +516,7 @@ public class PeakInvestigatorTask
 		logger.info("Receive file, " + remoteFilename
 				+ ", from SFTP server...");
 
-		SftpAction sftpAction = new SftpAction(
-				PeakInvestigatorSaaS.API_VERSION, username, password, projectID);
+		SftpAction sftpAction = new SftpAction(username, password, projectID);
 		String response = vtmx.executeAction(sftpAction);
 		sftpAction.processResponse(response);
 
@@ -689,8 +686,7 @@ public class PeakInvestigatorTask
 	protected void deleteJob(String jobID) throws ResponseFormatException,
 			ResponseErrorException, IOException {
 
-		DeleteAction action = new DeleteAction(
-				PeakInvestigatorSaaS.API_VERSION, username, password, jobID);
+		DeleteAction action = new DeleteAction(username, password, jobID);
 		String response = vtmx.executeAction(action);
 		action.processResponse(response);
 

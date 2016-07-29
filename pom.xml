@@ -500,7 +500,7 @@ This version has implemented the PeakInvestigator™ public API for peak (mass) 
 		<dependency>
 			<groupId>com.veritomyx</groupId>
 			<artifactId>peakinvestigator-sdk</artifactId>
-			<version>0.9</version>
+			<version>4.0</version>
 		</dependency>
 	</dependencies>
 

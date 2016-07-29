@@ -192,7 +192,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultSubmitTask(
 				InitAction.EXAMPLE_RESPONSE_1).usingDialogFactory(
 				new EmptyOkDialogFactory());
-		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.3", new Scan[] { scan1, scan2 }, new int[] { 50, 500, 60, 400 }, "job-blah");
 
 		assertEquals("V-504.1551", task.getName());
 	}
@@ -212,7 +212,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultSubmitTask(
 				InitAction.EXAMPLE_RESPONSE_1).usingDialogFactory(
 				new EmptyCancelDialogFactory());
-		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.3", new Scan[] { scan1, scan2 }, new int[] { 50, 500, 60, 400 }, "job-blah");
 
 		assertEquals(null, task.getName());
 	}
@@ -233,7 +233,7 @@ public class PeakInvestigatorTaskInitTest {
 
 		PeakInvestigatorTask task = createDefaultSubmitTask(BaseAction.API_SOURCE)
 				.usingDialogFactory(new EmptyOkDialogFactory());
-		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.3", new Scan[] { scan1, scan2 }, new int[] { 50, 500, 60, 400 }, "job-blah");
 
 		fail("Should not reach here.");
 	}
@@ -258,7 +258,7 @@ public class PeakInvestigatorTaskInitTest {
 
 		PeakInvestigatorTask task = createDefaultSubmitTask(response)
 				.usingDialogFactory(factory);
-		task.initializeSubmit("1.2", new Scan[] { scan1, scan2 }, new int[] { 50, 500 }, "job-blah");
+		task.initializeSubmit("1.3", new Scan[] { scan1, scan2 }, new int[] { 50, 500, 60, 450 }, "job-blah");
 
 		fail("Should not reach here.");
 	}

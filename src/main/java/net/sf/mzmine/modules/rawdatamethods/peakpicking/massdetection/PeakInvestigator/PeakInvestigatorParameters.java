@@ -57,13 +57,13 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 			"PeakInvestigator™ version",
 			"The PeakInvestigator version to use for the analysis.",
 			new String[] { LAST_USED_STRING });
-	public static final IntegerParameter minMass = new IntegerParameter(
-		    "Minimum m/z",
-		    "The minimum nominal m/z in the data to be used for analysis.",
+	public static final IntegerParameter startMass = new IntegerParameter(
+		    "Start m/z",
+		    "The nominal starting m/z in the data to be used for analysis.",
 		    0);
-	public static final IntegerParameter maxMass = new IntegerParameter(
-		    "Maximum m/z",
-		    "The maximum nominal m/z in the data to be used for analysis.",
+	public static final IntegerParameter endMass = new IntegerParameter(
+		    "End m/z",
+		    "The nominal ending m/z in the data to be used for analysis.",
 		    Integer.MAX_VALUE);
 
 	public static final BooleanParameter showLog = new BooleanParameter(
@@ -71,7 +71,7 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 			"Check this if you want to display the PeakInvestigator job log when retrieving results");
 
 	public PeakInvestigatorParameters() {
-		super(new Parameter[] { versions, minMass, maxMass, showLog });
+		super(new Parameter[] { versions, startMass, endMass, showLog });
 
 		versions.setValue("lastUsed");
 		showLog.setValue(true);
@@ -110,11 +110,11 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 				.getCurrentProject().getDataFiles();
 		int[] massRange = determineMassRangeFromData(files);
 
-		minMass.setValue(massRange[0]);
-		minMass.setMinMax(massRange[0], massRange[1] - 1);
+		startMass.setValue(massRange[0]);
+		startMass.setMinMax(massRange[0], massRange[1] - 1);
 
-		maxMass.setValue(massRange[1]);
-		maxMass.setMinMax(massRange[0] + 1, massRange[1]);
+		endMass.setValue(massRange[1]);
+		endMass.setMinMax(massRange[0] + 1, massRange[1]);
 	}
 
 	/**
@@ -236,8 +236,7 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 			Window window) throws ResponseFormatException, IOException {
 
 		VeritomyxSettings settings = preferences.getVeritomyxSettings();
-		PiVersionsAction action = new PiVersionsAction(
-				PeakInvestigatorSaaS.API_VERSION, settings.username,
+		PiVersionsAction action = new PiVersionsAction(settings.username,
 				settings.password);
 
 		String response = webService.executeAction(action);
@@ -261,8 +260,7 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 
 			settings = preferences.getVeritomyxSettings();
 
-			action = new PiVersionsAction(PeakInvestigatorSaaS.API_VERSION,
-					settings.username, settings.password);
+			action = new PiVersionsAction(settings.username, settings.password);
 			response = webService.executeAction(action);
 			action.processResponse(response);
 		}
@@ -281,17 +279,24 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 	}
 
 	public int[] getMassRange() {
-		int minMassValue = getParameter(minMass).getValue();
-		int maxMassValue = getParameter(maxMass).getValue();
+		int startMassValue = getParameter(startMass).getValue();
+		int endMassValue = getParameter(endMass).getValue();
 
-		// if we still have default (0, MAX_VALUE), then calculate
-		if (minMassValue == 0 && maxMassValue == Integer.MAX_VALUE) {
-			RawDataFile[] files = MZmineCore.getProjectManager()
-					.getCurrentProject().getDataFiles();
-			return determineMassRangeFromData(files);
+		RawDataFile[] files = MZmineCore.getProjectManager()
+				.getCurrentProject().getDataFiles();
+		int[] dataMassRange = determineMassRangeFromData(files);
+
+		// if we still have default values, then set to data ranges
+		if (startMassValue == 0) {
+			startMassValue = dataMassRange[0];
 		}
 
-		return new int[] { minMass.getValue(), maxMass.getValue() };
+		if (endMassValue == Integer.MAX_VALUE) {
+			endMassValue = dataMassRange[1];
+		}
+
+		return new int[] { dataMassRange[0], dataMassRange[1],
+				startMass.getValue(), endMass.getValue() };
 	}
 
 	public boolean shouldDisplayLog() {

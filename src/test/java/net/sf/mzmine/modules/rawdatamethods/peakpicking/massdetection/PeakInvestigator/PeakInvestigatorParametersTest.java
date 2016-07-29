@@ -44,8 +44,7 @@ public class PeakInvestigatorParametersTest {
 	@Test
 	public void testFormatPiVersions_LastUsedEmpty()
 			throws ResponseFormatException {
-		PiVersionsAction action = new PiVersionsAction("server", "username",
-				"password");
+		PiVersionsAction action = new PiVersionsAction("username", "password");
 		action.processResponse(VERSIONS_RESPONSE_1);
 		String[] choices = PeakInvestigatorParameters.formatPiVersions(action);
 		assertArrayEquals(new String[] { "1.2 (current)", "1.1", "1.0.0" },
@@ -55,8 +54,7 @@ public class PeakInvestigatorParametersTest {
 	@Test
 	public void testFormatPiVersions_LastUsedSameAsOldestVersion()
 			throws ResponseFormatException {
-		PiVersionsAction action = new PiVersionsAction("server", "username",
-				"password");
+		PiVersionsAction action = new PiVersionsAction("username", "password");
 		action.processResponse(VERSIONS_RESPONSE_2);
 		String[] choices = PeakInvestigatorParameters.formatPiVersions(action);
 		assertArrayEquals(new String[] { "1.2 (current)", "1.1",
@@ -66,8 +64,7 @@ public class PeakInvestigatorParametersTest {
 	@Test
 	public void testFormatPiVersions_LastUsedSameAsCurrentVersion()
 			throws ResponseFormatException {
-		PiVersionsAction action = new PiVersionsAction("server", "username",
-				"password");
+		PiVersionsAction action = new PiVersionsAction("username", "password");
 		action.processResponse(VERSIONS_RESPONSE_3);
 		String[] choices = PeakInvestigatorParameters.formatPiVersions(action);
 		assertArrayEquals(new String[] { "1.2 (current and last used)", "1.1",

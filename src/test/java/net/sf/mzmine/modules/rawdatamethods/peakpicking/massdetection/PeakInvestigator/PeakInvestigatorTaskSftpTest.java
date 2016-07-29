@@ -47,8 +47,8 @@ public class PeakInvestigatorTaskSftpTest {
 
 		SftpAction action = actionCaptor.getValue();
 		assertEquals(action.getHost(), "peakinvestigator.veritomyx.com");
-		assertEquals(action.getSftpUsername(), "V504");
-		assertEquals(action.getSftpPassword(), "cB34lxCH0anR952gu");
+		assertEquals(action.getSftpUsername(), "Vt504");
+		assertEquals(action.getSftpPassword(), "0UtnWMvzoi2jF4BQ");
 		assertEquals(action.getPort(), 22022);
 		assertEquals(action.getDirectory(), "/files");
 	}
@@ -148,8 +148,8 @@ public class PeakInvestigatorTaskSftpTest {
 
 		SftpAction action = actionCaptor.getValue();
 		assertEquals(action.getHost(), "peakinvestigator.veritomyx.com");
-		assertEquals(action.getSftpUsername(), "V504");
-		assertEquals(action.getSftpPassword(), "cB34lxCH0anR952gu");
+		assertEquals(action.getSftpUsername(), "Vt504");
+		assertEquals(action.getSftpPassword(), "0UtnWMvzoi2jF4BQ");
 		assertEquals(action.getPort(), 22022);
 		assertEquals(action.getDirectory(), "/files");
 	}
