@@ -482,7 +482,7 @@ public class PeakInvestigatorTask
 	}
 
 	private File bundleCalibrationScans() throws IOException {
-		Path calibrationPath = workingDirectory.toPath().resolve(jobID + "calib.tar");
+		Path calibrationPath = workingDirectory.toPath().resolve(jobID + ".calib.tar");
 		File calibrationFile = calibrationPath.toFile();
 		calibrationFile.deleteOnExit();
 
