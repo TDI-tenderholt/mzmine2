@@ -50,16 +50,19 @@ public class MZToleranceComponent extends JPanel {
     }
 
     public void setValue(MZTolerance value) {
-        mzToleranceField.setText(String.valueOf(value.getMzTolerance()));
-        ppmToleranceField.setText(String.valueOf(value.getPpmTolerance()));
+		if (value instanceof MaximumMZTolerance) {
+			MaximumMZTolerance mzTolerance = (MaximumMZTolerance) value;
+			mzToleranceField.setText(String.valueOf(mzTolerance.getMzTolerance()));
+			ppmToleranceField.setText(String.valueOf(mzTolerance.getPpmTolerance()));
+		}
     }
 
-    public MZTolerance getValue() {
+    public MaximumMZTolerance getValue() {
         try {
             double mzTolerance = Double.parseDouble(mzToleranceField.getText().trim());
             double ppmTolerance = Double
                     .parseDouble(ppmToleranceField.getText().trim());
-            MZTolerance value = new MZTolerance(mzTolerance, ppmTolerance);
+            MaximumMZTolerance value = new MaximumMZTolerance(mzTolerance, ppmTolerance);
             return value;
         } catch (NumberFormatException e) {
             return null;

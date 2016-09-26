@@ -105,33 +105,44 @@ public class MZToleranceParameter implements
 	    ppmTolerance = Double.parseDouble(itemString);
 	}
 
-	this.value = new MZTolerance(mzTolerance, ppmTolerance);
+	this.value = new MaximumMZTolerance(mzTolerance, ppmTolerance);
     }
 
     @Override
     public void saveValueToXML(Element xmlElement) {
 	if (value == null)
 	    return;
-	Document parentDocument = xmlElement.getOwnerDocument();
-	Element newElement = parentDocument.createElement("absolutetolerance");
-	newElement.setTextContent(String.valueOf(value.getMzTolerance()));
-	xmlElement.appendChild(newElement);
-	newElement = parentDocument.createElement("ppmtolerance");
-	newElement.setTextContent(String.valueOf(value.getPpmTolerance()));
-	xmlElement.appendChild(newElement);
+		if (value instanceof MaximumMZTolerance) {
+			MaximumMZTolerance mzTolerance = (MaximumMZTolerance) value;
+			Document parentDocument = xmlElement.getOwnerDocument();
+			Element newElement = parentDocument
+					.createElement("absolutetolerance");
+			newElement.setTextContent(String.valueOf(mzTolerance.getMzTolerance()));
+			xmlElement.appendChild(newElement);
+			newElement = parentDocument.createElement("ppmtolerance");
+			newElement.setTextContent(String.valueOf(mzTolerance.getPpmTolerance()));
+			xmlElement.appendChild(newElement);
+		}
+
     }
 
     @Override
-    public boolean checkValue(Collection<String> errorMessages) {
-	if (value == null) {
-	    errorMessages.add(name + " is not set properly");
-	    return false;
+	public boolean checkValue(Collection<String> errorMessages) {
+		if (value == null) {
+			errorMessages.add(name + " is not set properly");
+			return false;
+		}
+		if (value instanceof MaximumMZTolerance) {
+			MaximumMZTolerance mzTolerance = (MaximumMZTolerance) value;
+			if ((mzTolerance.getMzTolerance() <= 0.0)
+					&& (mzTolerance.getPpmTolerance() <= 0.0)) {
+				errorMessages.add(name + " must be greater than zero");
+				return false;
+			}
+		} else {
+			return false;
+		}
+		return true;
 	}
-	if ((value.getMzTolerance() <= 0.0) && (value.getPpmTolerance() <= 0.0)) {
-		errorMessages.add(name + " must be greater than zero");
-		return false;
-	}
-	return true;
-    }
 
 }

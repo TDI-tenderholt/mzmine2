@@ -360,9 +360,7 @@ public class CameraSearchTask extends AbstractTask {
 			// Identify isotopes.
 			this.rSession.eval(
 					"an <- findIsotopes(an, maxcharge=" + isoMaxCharge
-					+ ", maxiso=" + isoMaxCount + ", ppm="
-					+ isoMassTolerance.getPpmTolerance() + ", mzabs="
-					+ isoMassTolerance.getMzTolerance() + ')');
+					+ ", maxiso=" + isoMaxCount + ", mz tol=(" + isoMassTolerance + ')');
 			progress += progressInc;
 
 			// Split groups by correlating peak shape (need to set xraw to raw
