@@ -48,7 +48,7 @@ import net.sf.mzmine.util.ScanUtils;
 
 import org.apache.commons.io.FilenameUtils;
 
-import com.veritomyx.FileChecksum;
+import com.veritomyx.ChecksumFileWriter;
 import com.google.common.collect.Range;
 
 /**
@@ -524,21 +524,21 @@ public class StorableScan implements Scan {
     		logger.info("Exporting scan " + getScanNumber() + " to file " + filename);
     		try
     		{
-    			BufferedWriter fd = openFile(filename);
+    			ChecksumFileWriter writer = new ChecksumFileWriter(filename);
+
     			DataPoint pts[] = getDataPoints();
     			int num = pts.length;
-    			fd.write("# Scan Number: "      + getScanNumber()   + "\n");
-    			fd.write("# Scan MS Level: "    + getMSLevel()      + "\n");
-    			fd.write("# Scan Data Points: " + num               + "\n");
-    			fd.write("# Scan Mass Range: "  + (mzRange.upperEndpoint() - mzRange.lowerEndpoint()) + "\n");
-    			fd.write("# Scan Min Mass: "    + mzRange.lowerEndpoint()  + "\n");
-    			fd.write("# Scan Max Mass: "    + mzRange.upperEndpoint()  + "\n\n");
+    			writer.writeln("# Scan Number: "      + getScanNumber());
+    			writer.writeln("# Scan MS Level: "    + getMSLevel());
+    			writer.writeln("# Scan Data Points: " + num);
+    			writer.writeln("# Scan Mass Range: "  + (mzRange.upperEndpoint() - mzRange.lowerEndpoint()));
+    			writer.writeln("# Scan Min Mass: "    + mzRange.lowerEndpoint());
+    			writer.writeln("# Scan Max Mass: "    + mzRange.upperEndpoint());
+    			writer.newLine();
     			for (int p = 0; p < num; p++)
-    				fd.write(pts[p].getMZ() + "\t" + pts[p].getIntensity() + "\n");
-    			fd.close();
-    			FileChecksum chksum = new FileChecksum(filename);
-    			chksum.hash_file();
-    			chksum.append_txt(false);
+    				writer.writeln(pts[p].getMZ() + "\t" + pts[p].getIntensity());
+    			writer.close();
+
     			exported = num;
     		}
     		catch (Exception ex)
@@ -554,22 +554,22 @@ public class StorableScan implements Scan {
     			logger.info("Exporting mass list " + massListName + " for scan "+ getScanNumber() + " to file " + filename);
     			try
     			{
-    				BufferedWriter fd = openFile(filename);
+    				ChecksumFileWriter writer = new ChecksumFileWriter(filename);
+
     				DataPoint mzPeaks[] = massList.getDataPoints();
     				int num = mzPeaks.length;
-    				fd.write("# MS Level: "    + getMSLevel()    + "\n");
-    				fd.write("# Scan: "        + getScanNumber() + "\n");
-    				fd.write("# Mass List: "   + massListName    + "\n");
-    				fd.write("# Data Points: " + num             + "\n");
+    				writer.writeln("# MS Level: "    + getMSLevel());
+    				writer.writeln("# Scan: "        + getScanNumber());
+    				writer.writeln("# Mass List: "   + massListName);
+    				writer.writeln("# Data Points: " + num);
+    				writer.newLine();
     				for (int p = 0; p < num; p++)
     				{
     					DataPoint pt = mzPeaks[p];
-    					fd.write(pt.getMZ() + "\t" + pt.getIntensity() + "\n");
+    					writer.writeln(pt.getMZ() + "\t" + pt.getIntensity());
     				}
-    				fd.close();
-    				FileChecksum chksum = new FileChecksum(filename);
-    				chksum.hash_file();
-    				chksum.append_txt(false);
+    				writer.close();
+
     				exported = num;
     			}
     			catch (Exception ex)
