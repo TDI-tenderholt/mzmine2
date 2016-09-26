@@ -33,7 +33,6 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -58,7 +57,8 @@ import org.xeustechnologies.jtar.TarOutputStream;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpProgressMonitor;
-import com.veritomyx.FileChecksum;
+import com.veritomyx.ChecksumFileReader;
+import com.veritomyx.ChecksumFileReader.MissingChecksum;
 import com.veritomyx.PeakInvestigatorSaaS;
 import com.veritomyx.actions.BaseAction.ResponseFormatException;
 import com.veritomyx.actions.DeleteAction;
@@ -650,18 +650,9 @@ public class PeakInvestigatorTask
 			File centfile = new File(pfilename);
 			centfile.deleteOnExit();
 
-			FileChecksum fchksum = new FileChecksum(centfile);
-
-// TODO: handle checksums
-			if (!fchksum.verify(false)) {
-//				error("File has invalid checksum: " + basename);
-//				return new DataPoint[0];
-			}
-
-			List<String> lines = fchksum.getFileStrings();
-			for (String line:lines)
-			{
-				// skip comment or blank lines
+			ChecksumFileReader reader = new ChecksumFileReader(centfile.toPath());
+			String line;
+			while((line = reader.readLine()) != null) {
 				if (line.startsWith("#") || line.isEmpty()) {
 					continue;
 				}
@@ -673,10 +664,16 @@ public class PeakInvestigatorTask
 				sc.close();
 			}
 
-		} catch (FileNotFoundException e) {
+			reader.close();
+			if (!reader.isChecksumValid()) {
+				error("File has invalid checksum: " + basename);
+				return new DataPoint[0];
+			}
+
+		} catch (MissingChecksum e) {
 			error(e.getMessage());
 			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
+		} catch (FileNotFoundException e) {
 			error(e.getMessage());
 			e.printStackTrace();
 		} catch (IOException e) {
