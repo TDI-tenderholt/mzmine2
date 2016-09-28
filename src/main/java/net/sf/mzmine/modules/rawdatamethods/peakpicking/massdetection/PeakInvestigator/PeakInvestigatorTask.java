@@ -656,11 +656,19 @@ public class PeakInvestigatorTask
 				if (line.startsWith("#") || line.isEmpty()) {
 					continue;
 				}
-	
+
+				DataPoint dp;
 				Scanner sc = new Scanner(line);
 				double mz  = sc.nextDouble();
 				double y   = sc.nextDouble();
-				mzPeaks.add(new SimpleDataPoint(mz, y));
+				if (sc.hasNextDouble()) {
+					double mzError = sc.nextDouble();
+					double intensityError = sc.nextDouble();
+					dp = new PeakInvestigatorDataPoint(mz, y, mzError, intensityError);
+				} else {
+					dp = new SimpleDataPoint(mz, y);
+				}
+				mzPeaks.add(dp);
 				sc.close();
 			}
 
