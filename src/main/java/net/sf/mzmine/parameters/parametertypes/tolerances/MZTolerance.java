@@ -1,9 +1,16 @@
 package net.sf.mzmine.parameters.parametertypes.tolerances;
 
+import net.sf.mzmine.parameters.Parameter;
+import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+
 import com.google.common.collect.Range;
 
-public interface MZTolerance {
-	Range<Double> getToleranceRange(final double mzValue);
-	Range<Double> getToleranceRange(final Range<Double> mzRange);
-	boolean checkWithinTolerance(final double mz1, final double mz2);
+public abstract class MZTolerance extends SimpleParameterSet {
+	public MZTolerance(Parameter<?>[] parameters) {
+		super(parameters);
+	}
+
+	public abstract Range<Double> getToleranceRange(final double mzValue);
+	public abstract Range<Double> getToleranceRange(final Range<Double> mzRange);
+	public abstract boolean checkWithinTolerance(final double mz1, final double mz2);
 }
