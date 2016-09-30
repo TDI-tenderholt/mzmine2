@@ -21,6 +21,7 @@ package net.sf.mzmine.parameters.parametertypes.tolerances;
 
 import java.awt.Window;
 
+import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -77,6 +78,11 @@ public class MaximumMZTolerance implements MZTolerance {
 	return Range.closed(mzValue - absoluteTolerance, mzValue
 		+ absoluteTolerance);
     }
+
+	@Override
+	public Range<Double> getToleranceRange(final DataPoint dataPoint) {
+		return getToleranceRange(dataPoint.getMZ());
+	}
 
     @Override
     public Range<Double> getToleranceRange(final Range<Double> mzRange) {

@@ -79,7 +79,7 @@ public class HighestDataPointConnector {
 
                 DataPoint lastMzPeak = testChrom.getLastMzPeak();
                 Range<Double> toleranceRange = mzTolerance
-                        .getToleranceRange(lastMzPeak.getMZ());
+                        .getToleranceRange(lastMzPeak);
                 if (toleranceRange.contains(mzPeak.getMZ())) {
                     if ((bestChromatogram == null) || (testChrom.getLastMzPeak()
                             .getIntensity() > bestChromatogram.getLastMzPeak()
