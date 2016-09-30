@@ -30,22 +30,32 @@ import org.w3c.dom.NodeList;
 public class MZToleranceParameter implements
 		UserParameter<MZTolerance, MZToleranceComponent> {
 
-	private static final MZTolerance[] mzTolerances = { new MaximumMZTolerance() };
+	private final MZTolerance[] mzTolerances;
 
 	private String name, description;
 	private MZTolerance value;
 
 	public MZToleranceParameter() {
+		this(new MZTolerance[] { new MaximumMZTolerance() });
+	}
+
+	public MZToleranceParameter(String name, String description) {
+		this(name, description, new MZTolerance[] { new MaximumMZTolerance() });
+	}
+
+	public MZToleranceParameter(MZTolerance[] mzTolerances) {
 		this(
 				"m/z tolerance",
 				"Maximum allowed difference between two m/z values to be considered same.\n"
 						+ "The value is specified both as absolute tolerance (in m/z) and relative tolerance (in ppm).\n"
-						+ "The tolerance range is calculated using maximum of the absolute and relative tolerances.");
+						+ "The tolerance range is calculated using maximum of the absolute and relative tolerances.",
+				mzTolerances);
 	}
 
-	public MZToleranceParameter(String name, String description) {
+	public MZToleranceParameter(String name, String description, MZTolerance[] mzTolerances) {
 		this.name = name;
 		this.description = description;
+		this.mzTolerances = mzTolerances;
 	}
 
 	@Override
@@ -65,7 +75,7 @@ public class MZToleranceParameter implements
 
 	@Override
 	public MZToleranceParameter cloneParameter() {
-		MZToleranceParameter copy = new MZToleranceParameter(name, description);
+		MZToleranceParameter copy = new MZToleranceParameter(name, description, mzTolerances);
 		copy.setValue(this.getValue());
 		return copy;
 	}
