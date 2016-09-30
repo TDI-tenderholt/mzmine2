@@ -22,7 +22,6 @@ package net.sf.mzmine.parameters.parametertypes.tolerances;
 import java.util.Collection;
 
 import net.sf.mzmine.parameters.UserParameter;
-import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -32,8 +31,7 @@ public class MZToleranceParameter implements
 		UserParameter<MZTolerance, MZToleranceComponent> {
 
 	private static final MZTolerance[] mzTolerances = { new MaximumMZTolerance() };
-	private static final ComboParameter<MZTolerance> mzTolerancesCombo = new ComboParameter<MZTolerance>(
-			"m/z tolerances", "Desired MZTolerance type", mzTolerances);
+
 	private String name, description;
 	private MZTolerance value;
 

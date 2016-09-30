@@ -19,8 +19,13 @@
 
 package net.sf.mzmine.parameters.parametertypes.tolerances;
 
+import java.awt.Window;
+
 import net.sf.mzmine.parameters.Parameter;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
+import net.sf.mzmine.util.ExitCode;
 
 import com.google.common.collect.Range;
 
@@ -29,35 +34,41 @@ import com.google.common.collect.Range;
  * and relative (ppm) values. The tolerance range is calculated as the maximum
  * of the absolute and relative values.
  */
-public class MaximumMZTolerance extends MZTolerance {
+public class MaximumMZTolerance implements MZTolerance {
 
     // PPM conversion factor.
     private static final double MILLION = 1000000.0;
 
     // Tolerance has absolute (in m/z) and relative (in ppm) values
-	private static final DoubleParameter mzTolerance = new DoubleParameter(
-			"mzTolerance", "The absolute (in m/z) tolerance");
-	private static final DoubleParameter ppmTolerance = new DoubleParameter(
-			"ppmTolerance", "The relative (in ppm) tolerance");
+    private Double mzTolerance;
+    private Double ppmTolerance;
 
     public MaximumMZTolerance() {
-    	super(new Parameter[] { mzTolerance, ppmTolerance});
+		mzTolerance = MaximumMzToleranceParameters.mzTolerance.getValue();
+		ppmTolerance = MaximumMzToleranceParameters.ppmTolerance.getValue();
+    }
+
+    public MaximumMZTolerance(double mzTolerance, double ppmTolerance) {
+    	this.mzTolerance = mzTolerance;
+    	this.ppmTolerance = ppmTolerance;
+    	MaximumMzToleranceParameters.mzTolerance.setValue(mzTolerance);
+    	MaximumMzToleranceParameters.ppmTolerance.setValue(ppmTolerance);
     }
 
     public double getMzTolerance() {
-	return mzTolerance.getValue();
+	return mzTolerance;
     }
 
     public double getPpmTolerance() {
-	return ppmTolerance.getValue();
+	return ppmTolerance;
     }
 
     private double getMzToleranceForMass(final double mzValue) {
-	return Math.max(mzTolerance.getValue(), mzValue / MILLION * ppmTolerance.getValue());
+	return Math.max(mzTolerance, mzValue / MILLION * ppmTolerance);
     }
 
     public double getPpmToleranceForMass(final double mzValue) {
-	return Math.max(ppmTolerance.getValue(), mzTolerance.getValue() / (mzValue / MILLION));
+	return Math.max(ppmTolerance, mzTolerance / (mzValue / MILLION));
     }
 
     @Override
@@ -81,8 +92,44 @@ public class MaximumMZTolerance extends MZTolerance {
 	return getToleranceRange(mz1).contains(mz2);
     }
 
-    @Override
-    public String toString() {
-		return "Maximum of m/z or ppm tolerances";
+	@Override
+	public ParameterSet getParameterSet() {
+		return new MaximumMzToleranceParameters();
+	}
+
+	@Override
+	public void updateFromParameterSet(ParameterSet parameterSet) {
+		mzTolerance = parameterSet.getParameter(
+				MaximumMzToleranceParameters.mzTolerance).getValue();
+		ppmTolerance = parameterSet.getParameter(
+				MaximumMzToleranceParameters.ppmTolerance).getValue();
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Maximum of %s Da or %s ppm",
+				mzTolerance, ppmTolerance);
+	}
+
+    public static class MaximumMzToleranceParameters extends SimpleParameterSet {
+    	private static final DoubleParameter mzTolerance = new DoubleParameter(
+    			"mzTolerance", "The absolute (in m/z) tolerance");
+    	private static final DoubleParameter ppmTolerance = new DoubleParameter(
+    			"ppmTolerance", "The relative (in ppm) tolerance");
+
+    	public MaximumMzToleranceParameters() {
+    		super(new Parameter<?>[] { mzTolerance, ppmTolerance});
+    	}
+
+    	@Override
+    	public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
+    		return super.showSetupDialog(parent, valueCheckRequired);
+    	}
+
+		public MZTolerance getMzTolerance() {
+			return new MaximumMZTolerance(mzTolerance.getValue(),
+					ppmTolerance.getValue());
+		}
     }
+
 }

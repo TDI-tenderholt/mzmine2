@@ -26,15 +26,12 @@ import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import net.sf.mzmine.modules.MZmineProcessingStep;
-import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
+import net.sf.mzmine.util.ExitCode;
 
 public class MZToleranceComponent extends JPanel implements ActionListener {
 
@@ -63,14 +60,13 @@ public class MZToleranceComponent extends JPanel implements ActionListener {
 
 		setButton = new JButton("...");
 		setButton.addActionListener(this);
-		boolean buttonEnabled = (mzTolerances[0].getParameters() != null);
-		setButton.setEnabled(buttonEnabled);
+		setButton.setEnabled(true);
 		add(setButton, BorderLayout.EAST);
 
 	}
 
 	public void setValue(MZTolerance value) {
-
+		comboBox.setSelectedItem(value);
 	}
 
 	public MZTolerance getValue() {
@@ -87,24 +83,26 @@ public class MZToleranceComponent extends JPanel implements ActionListener {
 		Object src = event.getSource();
 
 		MZTolerance selected = (MZTolerance) comboBox.getSelectedItem();
+		if (selected == null) {
+			setButton.setEnabled(false);
+			return;
+		}
+
+		ParameterSet parameterSet = selected.getParameterSet();
 
 		if (src == comboBox) {
-			if (selected == null) {
-				setButton.setEnabled(false);
-				return;
-			}
-			Parameter<?>[] parameters = selected.getParameters();
-			setButton.setEnabled(parameters.length > 0);
+			setButton.setEnabled(parameterSet.getParameters().length > 0);
 		}
 
 		if (src == setButton) {
-			if (selected == null)
-				return;
 			ParameterSetupDialog dialog = (ParameterSetupDialog) SwingUtilities
 					.getAncestorOfClass(ParameterSetupDialog.class, this);
 			if (dialog == null)
 				return;
-			selected.showSetupDialog(dialog, dialog.isValueCheckRequired());
+			ExitCode code = parameterSet.showSetupDialog(dialog, dialog.isValueCheckRequired());
+			if (code == ExitCode.OK) {
+				selected.updateFromParameterSet(parameterSet);
+			}
 		}
 
 	}
