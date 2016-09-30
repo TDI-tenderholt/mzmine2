@@ -120,6 +120,7 @@ public class ChromatogramBuilderTask extends AbstractTask {
         setStatus(TaskStatus.PROCESSING);
 
         logger.info("Started chromatogram builder on " + dataFile);
+        logger.info("Using MZtolerance: " + mzTolerance);
 
         scans = scanSelection.getMatchingScans(dataFile);
         int allScanNumbers[] = scanSelection.getMatchingScanNumbers(dataFile);
