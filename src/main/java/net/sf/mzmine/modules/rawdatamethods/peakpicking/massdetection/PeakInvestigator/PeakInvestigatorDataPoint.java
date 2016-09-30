@@ -8,7 +8,7 @@ import net.sf.mzmine.main.MZmineCore;
 
 public class PeakInvestigatorDataPoint extends SimpleDataPoint {
 
-	private final double mzError, intensityError;
+	private final double mzError, intensityError, mzMinimumError;
 
 	/**
 	 * Constructor which copies the data from another DataPoint
@@ -17,19 +17,22 @@ public class PeakInvestigatorDataPoint extends SimpleDataPoint {
 		super(dp);
 		this.mzError = Double.NaN;
 		this.intensityError = Double.NaN;
+		this.mzMinimumError = Double.NaN;
 	}
 
 	public PeakInvestigatorDataPoint(PeakInvestigatorDataPoint dp) {
 		super(dp.getMZ(), dp.getIntensity());
 		this.mzError = dp.getMzError();
 		this.intensityError = dp.getIntensityError();
+		this.mzMinimumError = dp.getMzMinimumError();
 	}
 
 	public PeakInvestigatorDataPoint(double mz, double intensity,
-			double mzError, double intensityError) {
+			double mzError, double intensityError, double mzMinimumError) {
 		super(mz, intensity);
 		this.mzError = mzError;
 		this.intensityError = intensityError;
+		this.mzMinimumError = mzMinimumError;
 	}
 
 	public double getMzError() {
@@ -38,6 +41,10 @@ public class PeakInvestigatorDataPoint extends SimpleDataPoint {
 
 	public double getIntensityError() {
 		return intensityError;
+	}
+
+	public double getMzMinimumError() {
+		return mzMinimumError;
 	}
 
 	@Override

@@ -663,7 +663,9 @@ public class PeakInvestigatorTask
 				if (sc.hasNextDouble()) {
 					double mzError = sc.nextDouble();
 					double intensityError = sc.nextDouble();
-					dp = new PeakInvestigatorDataPoint(mz, y, mzError, intensityError);
+					double mzMinimumError = sc.nextDouble();
+					dp = new PeakInvestigatorDataPoint(mz, y, mzError,
+							intensityError, mzMinimumError);
 				} else {
 					dp = new SimpleDataPoint(mz, y);
 				}
