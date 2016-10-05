@@ -20,6 +20,7 @@
 package net.sf.mzmine.modules.masslistmethods.chromatogrambuilder;
 
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorMzTolerance;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
@@ -29,6 +30,8 @@ import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MaximumMZTolerance;
 
 public class ChromatogramBuilderParameters extends SimpleParameterSet {
 
@@ -51,7 +54,9 @@ public class ChromatogramBuilderParameters extends SimpleParameterSet {
             "Minimum intensity of the highest data point in the chromatogram. If chromatogram height is below this level, it is discarded.",
             MZmineCore.getConfiguration().getIntensityFormat());
 
-    public static final MZToleranceParameter mzTolerance = new MZToleranceParameter();
+	public static final MZToleranceParameter mzTolerance = new MZToleranceParameter(
+			new MZTolerance[] { new MaximumMZTolerance(),
+					new PeakInvestigatorMzTolerance() });
 
     public static final StringParameter suffix = new StringParameter("Suffix",
             "This string is added to filename as suffix", "chromatograms");

@@ -121,7 +121,7 @@ public class MassDetectionTask extends AbstractTask {
 				MassList newMassList;
 				if (mzPeaks[0] instanceof PeakInvestigatorDataPoint) {
 					newMassList = new PeakInvestigatorMassList(name, scan,
-							(PeakInvestigatorDataPoint[]) mzPeaks);
+							mzPeaks);
 				} else {
 					newMassList = new SimpleMassList(name, scan, mzPeaks);
 				}

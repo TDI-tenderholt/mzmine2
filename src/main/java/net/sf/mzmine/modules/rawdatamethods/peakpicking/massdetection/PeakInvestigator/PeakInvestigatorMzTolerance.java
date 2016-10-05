@@ -56,7 +56,7 @@ public class PeakInvestigatorMzTolerance implements MZTolerance {
 
 	@Override
 	public String toString() {
-		return String.format("±%l confidence level", confidenceLevel);
+		return String.format("±%d confidence level", confidenceLevel);
 	}
 
 	static class PeakInvestigatorMzToleranceParameters extends
