@@ -19,6 +19,7 @@
 
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.exactmass;
 
+import java.nio.FloatBuffer;
 import java.text.Format;
 
 import net.sf.mzmine.datamodel.DataPoint;
@@ -117,5 +118,16 @@ public class ExactMzDataPoint implements DataPoint {
 		+ intensityFormat.format(intensity);
 	return str;
     }
+
+	@Override
+	public int getNumberOfValues() {
+		return 2;
+	}
+
+	@Override
+	public void addToBuffer(FloatBuffer buffer) {
+		buffer.put((float) mz);
+		buffer.put((float) intensity);
+	}
 
 }

@@ -19,6 +19,8 @@
 
 package net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder;
 
+import java.nio.FloatBuffer;
+
 import net.sf.mzmine.datamodel.DataPoint;
 
 /**
@@ -55,5 +57,16 @@ class GapDataPoint implements DataPoint {
     public double getRT() {
 	return rt;
     }
+
+	@Override
+	public int getNumberOfValues() {
+		return 2;
+	}
+
+	@Override
+	public void addToBuffer(FloatBuffer buffer) {
+		buffer.put((float) mz);
+		buffer.put((float) intensity);
+	}
 
 }
