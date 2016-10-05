@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -43,9 +44,11 @@ import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.RemoteJob;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 import com.google.common.collect.Range;
 import com.google.common.primitives.Ints;
+import com.sun.xml.xsom.impl.scd.Iterators.Map;
 
 /**
  * RawDataFile implementation. It provides storage of data points for scans and
@@ -332,7 +335,7 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
 	// Convert the dataPoints into a byte array. Each float takes 4 bytes,
 	// so we get the current float offset by dividing the size of the file
 	// by 4
-	final int numOfBytes = numOfDataPoints * 2 * 4;
+	final int numOfBytes = numOfDataPoints * dataPoints[0].getNumberOfValues() * 4;
 
 	if (buffer.capacity() < numOfBytes) {
 	    buffer = ByteBuffer.allocate(numOfBytes * 2);
@@ -342,8 +345,7 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
 
 	FloatBuffer floatBuffer = buffer.asFloatBuffer();
 	for (DataPoint dp : dataPoints) {
-	    floatBuffer.put((float) dp.getMZ());
-	    floatBuffer.put((float) dp.getIntensity());
+	    dp.addToBuffer(floatBuffer);
 	}
 
 	dataPointsFile.seek(currentOffset);
@@ -359,13 +361,19 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
     public synchronized DataPoint[] readDataPoints(int ID) throws IOException {
 
 	final Long currentOffset = dataPointsOffsets.get(ID);
+	Entry<Integer, Long> next = dataPointsOffsets.higherEntry(ID);
+	final int numOfBytes;
+	if (next != null) {
+		numOfBytes = (int) (next.getValue() - currentOffset);
+	} else {
+		numOfBytes = (int) (dataPointsFile.length() - currentOffset);
+	}
+
 	final Integer numOfDataPoints = dataPointsLengths.get(ID);
 
 	if ((currentOffset == null) || (numOfDataPoints == null)) {
 	    throw new IllegalArgumentException("Unknown storage ID " + ID);
 	}
-
-	final int numOfBytes = numOfDataPoints * 2 * 4;
 
 	if (buffer.capacity() < numOfBytes) {
 	    buffer = ByteBuffer.allocate(numOfBytes * 2);
@@ -378,12 +386,24 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
 
 	FloatBuffer floatBuffer = buffer.asFloatBuffer();
 
+	final int numberOfColumns = (int) (numOfBytes / (numOfDataPoints * 4));
 	DataPoint dataPoints[] = new DataPoint[numOfDataPoints];
 
 	for (int i = 0; i < numOfDataPoints; i++) {
-	    float mz = floatBuffer.get();
-	    float intensity = floatBuffer.get();
-	    dataPoints[i] = new SimpleDataPoint(mz, intensity);
+		float mz = floatBuffer.get();
+		float intensity = floatBuffer.get();
+		if (numberOfColumns == 2) {
+			dataPoints[i] = new SimpleDataPoint(mz, intensity);
+		} else if (numberOfColumns == 5) {
+			float mzError = floatBuffer.get();
+			float intensityError = floatBuffer.get();
+			float minimumMzError = floatBuffer.get();
+			dataPoints[i] = new PeakInvestigatorDataPoint(mz, intensity,
+					mzError, intensityError, minimumMzError);
+		} else {
+			throw new IllegalStateException(
+					"Cannot handle number of columns: " + numberOfColumns);
+		}
 	}
 
 	return dataPoints;
