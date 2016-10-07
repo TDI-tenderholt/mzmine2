@@ -1,5 +1,7 @@
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator;
 
+import java.awt.Window;
+
 import com.google.common.collect.Range;
 
 import net.sf.mzmine.datamodel.DataPoint;
@@ -8,10 +10,19 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
+import net.sf.mzmine.util.ExitCode;
 
 public class PeakInvestigatorMzTolerance implements MZTolerance {
 
 	private int confidenceLevel;
+
+	public PeakInvestigatorMzTolerance() {
+		this.confidenceLevel = 68;
+	}
+
+	public PeakInvestigatorMzTolerance(Integer confidenceLevel) {
+		this.confidenceLevel = confidenceLevel;
+	}
 
 	@Override
 	public Range<Double> getToleranceRange(double mzValue) {
@@ -66,6 +77,15 @@ public class PeakInvestigatorMzTolerance implements MZTolerance {
 
 		PeakInvestigatorMzToleranceParameters() {
 			super(new Parameter<?>[] { confidenceLevel });
+		}
+
+    	@Override
+    	public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
+    		return super.showSetupDialog(parent, valueCheckRequired);
+    	}
+
+		public MZTolerance getMzTolerance() {
+			return new PeakInvestigatorMzTolerance(confidenceLevel.getValue());
 		}
 	}
 

@@ -1,5 +1,6 @@
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator;
 
+import java.nio.FloatBuffer;
 import java.text.Format;
 
 import net.sf.mzmine.datamodel.DataPoint;
@@ -62,6 +63,19 @@ public class PeakInvestigatorDataPoint extends SimpleDataPoint {
 		}
 
 		return false;
+	}
+
+	@Override
+	public int getNumberOfValues() {
+		return 5;
+	}
+
+	@Override
+	public void addToBuffer(FloatBuffer buffer) {
+		super.addToBuffer(buffer);
+		buffer.put((float) mzError);
+		buffer.put((float) intensityError);
+		buffer.put((float) mzMinimumError);
 	}
 
 	@Override
