@@ -71,7 +71,7 @@ public class MZminePreferences extends SimpleParameterSet {
     public static final WindowSettingsParameter windowSetttings = new WindowSettingsParameter();
 
 	public static final StringParameter vtmxServer = new StringParameter(
-			"Veritomxy Server", "Server address for Veritomyx SaaS.",
+			"Veritomyx Server", "Server address for Veritomyx SaaS.",
 			"peakinvestigator.veritomyx.com");
 
 	public static final StringParameter vtmxUsername = new StringParameter(
