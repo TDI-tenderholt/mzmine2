@@ -19,7 +19,12 @@
 
 package net.sf.mzmine.modules.visualization.spectra.datasets;
 
+import org.jfree.data.xy.AbstractXYDataset;
+import org.jfree.data.xy.IntervalXYDataset;
+import org.jfree.data.xy.XYDataset;
+
 import net.sf.mzmine.datamodel.MassList;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 /**
  * Data set for MassList
@@ -31,8 +36,109 @@ public class MassListDataSet extends DataPointsDataSet {
      */
     private static final long serialVersionUID = 1L;
 
-    public MassListDataSet(MassList massList) {
-	super("Mass list " + massList.getName(), massList.getDataPoints());
-    }
+	public MassListDataSet(MassList massList) {
+		super("Mass list " + massList.getName(), massList.getDataPoints());
+	}
 
+	public XYDataset getErrorBarDataSet() {
+		if (mzPeaks[0] instanceof PeakInvestigatorDataPoint) {
+			return new ErrorBarDataSet();
+		}
+		return null;
+	}
+
+	public class ErrorBarDataSet extends AbstractXYDataset implements
+			IntervalXYDataset {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public int getItemCount(int series) {
+			return mzPeaks.length;
+		}
+
+		@Override
+		public Number getX(int series, int item) {
+			return mzPeaks[item].getMZ();
+		}
+
+		@Override
+		public Number getY(int series, int item) {
+			return mzPeaks[item].getIntensity();
+		}
+
+		@Override
+		public int getSeriesCount() {
+			return 1;
+		}
+
+		@Override
+		public Comparable<String> getSeriesKey(int series) {
+			return label;
+		}
+
+		@Override
+		public Number getStartX(int series, int item) {
+			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
+				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
+				return dataPoint.getMZ() - 1.96 * dataPoint.getMzError();
+			}
+
+			return getX(series, item);
+		}
+
+		@Override
+		public double getStartXValue(int series, int item) {
+			return (double) getStartX(series, item);
+		}
+
+		@Override
+		public Number getEndX(int series, int item) {
+			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
+				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
+				return dataPoint.getMZ() + 1.96 * dataPoint.getMzError();
+			}
+
+			return getX(series, item);
+		}
+
+		@Override
+		public double getEndXValue(int series, int item) {
+			return (double) getEndX(series, item);
+		}
+
+		@Override
+		public Number getStartY(int series, int item) {
+			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
+				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
+				return dataPoint.getIntensity() - 1.96 * dataPoint.getIntensityError();
+			}
+
+			return getY(series, item);
+		}
+
+		@Override
+		public double getStartYValue(int series, int item) {
+			return (double) getStartY(series, item);
+		}
+
+		@Override
+		public Number getEndY(int series, int item) {
+			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
+				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
+				return dataPoint.getIntensity() + 1.96 * dataPoint.getIntensityError();
+			}
+
+			return getY(series, item);
+		}
+
+		@Override
+		public double getEndYValue(int series, int item) {
+			return (double) getEndY(series, item);
+		}
+
+	}
 }
