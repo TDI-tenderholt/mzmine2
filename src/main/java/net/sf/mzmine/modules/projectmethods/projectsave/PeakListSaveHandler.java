@@ -46,6 +46,7 @@ import net.sf.mzmine.datamodel.PeakList.PeakListAppliedMethod;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -366,56 +367,57 @@ public class PeakListSaveHandler {
 	atts.clear();
 
 	// <SCAN_ID> <MASS> <HEIGHT>
-	ByteArrayOutputStream byteScanStream = new ByteArrayOutputStream();
-	DataOutputStream dataScanStream = new DataOutputStream(byteScanStream);
+	OutputStreamWrapper scanStream = new OutputStreamWrapper();
+	OutputStreamWrapper massStream = new OutputStreamWrapper();
+	OutputStreamWrapper heightStream = new OutputStreamWrapper();
+	OutputStreamWrapper massErrorStream = new OutputStreamWrapper();
+	OutputStreamWrapper heightErrorStream = new OutputStreamWrapper();
+	OutputStreamWrapper minimumErrorStream = new OutputStreamWrapper();
 
-	ByteArrayOutputStream byteMassStream = new ByteArrayOutputStream();
-	DataOutputStream dataMassStream = new DataOutputStream(byteMassStream);
-
-	ByteArrayOutputStream byteHeightStream = new ByteArrayOutputStream();
-	DataOutputStream dataHeightStream = new DataOutputStream(
-		byteHeightStream);
-
-	float mass, height;
 	for (int scan : scanNumbers) {
-	    dataScanStream.writeInt(scan);
-	    dataScanStream.flush();
+		scanStream.writeIntAndFlush(scan);
+
 	    DataPoint mzPeak = peak.getDataPoint(scan);
-	    if (mzPeak != null) {
-		mass = (float) mzPeak.getMZ();
-		height = (float) mzPeak.getIntensity();
-	    } else {
-		mass = 0f;
-		height = 0f;
+
+	    float mass = (float) (mzPeak != null ? mzPeak.getMZ() : 0.0);
+	    massStream.writeFloatAndFlush(mass);
+
+	    float height = (float) (mzPeak != null ? mzPeak.getIntensity() : 0.0);
+	    heightStream.writeFloatAndFlush(height);
+
+	    if (mzPeak instanceof PeakInvestigatorDataPoint) {
+	    	PeakInvestigatorDataPoint dp = (PeakInvestigatorDataPoint) mzPeak;
+
+	    	float mzError = (float) (dp != null ? dp.getMzError() : 0.0);
+	    	massErrorStream.writeFloatAndFlush(mzError);
+
+	    	float heightError = (float) (dp != null ? dp.getIntensityError() : 0.0);
+	    	heightErrorStream.writeFloatAndFlush(heightError);
+
+	    	float minimumError = (float) (dp != null ? dp.getMzMinimumError() : 0.0);
+	    	minimumErrorStream.writeFloatAndFlush(minimumError);
 	    }
-	    dataMassStream.writeFloat(mass);
-	    dataMassStream.flush();
-	    dataHeightStream.writeFloat(height);
-	    dataHeightStream.flush();
 	}
 
-	byte[] bytes = Base64.encode(byteScanStream.toByteArray());
-	hd.startElement("", "", PeakListElementName.SCAN_ID.getElementName(),
-		atts);
-	String sbytes = new String(bytes);
-	hd.characters(sbytes.toCharArray(), 0, sbytes.length());
-	hd.endElement("", "", PeakListElementName.SCAN_ID.getElementName());
-
-	bytes = Base64.encode(byteMassStream.toByteArray());
-	hd.startElement("", "", PeakListElementName.MZ.getElementName(), atts);
-	sbytes = new String(bytes);
-	hd.characters(sbytes.toCharArray(), 0, sbytes.length());
-	hd.endElement("", "", PeakListElementName.MZ.getElementName());
-
-	bytes = Base64.encode(byteHeightStream.toByteArray());
-	hd.startElement("", "", PeakListElementName.HEIGHT.getElementName(),
-		atts);
-	sbytes = new String(bytes);
-	hd.characters(sbytes.toCharArray(), 0, sbytes.length());
-	hd.endElement("", "", PeakListElementName.HEIGHT.getElementName());
+	writeBytes(hd, PeakListElementName.SCAN_ID, scanStream);
+	writeBytes(hd, PeakListElementName.MZ, massStream);
+	writeBytes(hd, PeakListElementName.HEIGHT, heightStream);
+	writeBytes(hd, PeakListElementName.MZ_ERROR, massErrorStream);
+	writeBytes(hd, PeakListElementName.HEIGHT_ERROR, heightErrorStream);
+	writeBytes(hd, PeakListElementName.MINIMUM_ERROR, minimumErrorStream);
 
 	hd.endElement("", "", PeakListElementName.MZPEAKS.getElementName());
     }
+
+	private void writeBytes(TransformerHandler hd, PeakListElementName name,
+			OutputStreamWrapper wrapper) throws SAXException {
+
+		AttributesImpl atts = new AttributesImpl();
+		String bytes = new String(Base64.encode(wrapper.toByteArray()));
+		hd.startElement("", "", name.getElementName(), atts);
+		hd.characters(bytes.toCharArray(), 0, bytes.length());
+		hd.endElement("", "", name.getElementName());
+	}
 
     private void fillIsotopePatternElement(IsotopePattern isotopePattern,
 	    TransformerHandler hd) throws SAXException, IOException {
@@ -449,4 +451,27 @@ public class PeakListSaveHandler {
 	canceled = true;
     }
 
+	private class OutputStreamWrapper {
+		private final ByteArrayOutputStream byteStream;
+		private final DataOutputStream dataStream;
+
+		public OutputStreamWrapper() {
+			byteStream = new ByteArrayOutputStream();
+			dataStream = new DataOutputStream(byteStream);
+		}
+
+		public void writeFloatAndFlush(float value) throws IOException {
+			dataStream.writeFloat(value);
+			dataStream.flush();
+		}
+
+		public void writeIntAndFlush(int value) throws IOException {
+			dataStream.writeInt(value);
+			dataStream.flush();
+		}
+
+		public byte[] toByteArray() {
+			return byteStream.toByteArray();
+		}
+	}
 }
