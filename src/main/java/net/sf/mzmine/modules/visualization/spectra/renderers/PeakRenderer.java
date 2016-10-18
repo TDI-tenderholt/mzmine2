@@ -25,6 +25,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
 import net.sf.mzmine.modules.visualization.spectra.datasets.MassListDataSet;
+import net.sf.mzmine.modules.visualization.spectra.datasets.PeakListDataSet;
 
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.event.RendererChangeListener;
@@ -94,6 +95,8 @@ public class PeakRenderer extends AbstractXYItemRenderer {
 		XYDataset errorDataSet = null;
 		if (dataset instanceof MassListDataSet) {
 			errorDataSet = ((MassListDataSet) dataset).getErrorBarDataSet();
+		} else if (dataset instanceof PeakListDataSet) {
+			errorDataSet = ((PeakListDataSet) dataset).getErrorBarDataSet();
 		}
 
 		if (errorDataSet != null) {

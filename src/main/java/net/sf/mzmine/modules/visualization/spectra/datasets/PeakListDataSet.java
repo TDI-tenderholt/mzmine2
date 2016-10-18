@@ -25,9 +25,11 @@ import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 import org.jfree.data.xy.AbstractXYDataset;
 import org.jfree.data.xy.IntervalXYDataset;
+import org.jfree.data.xy.XYDataset;
 
 /**
  * Picked peaks data set;
@@ -44,6 +46,7 @@ public class PeakListDataSet extends AbstractXYDataset implements
 
     private Feature displayedPeaks[];
     private double mzValues[], intensityValues[];
+    private double[] mzErrors = null, intensityErrors = null, minErrors = null;
     private String label;
 
     public PeakListDataSet(RawDataFile dataFile, int scanNumber,
@@ -70,6 +73,18 @@ public class PeakListDataSet extends AbstractXYDataset implements
 		continue;
 	    mzValues[i] = dp.getMZ();
 	    intensityValues[i] = dp.getIntensity();
+	    if (dp instanceof PeakInvestigatorDataPoint) {
+	    	if (mzErrors == null) {
+	    		mzErrors = new double[displayedPeaks.length];
+	    		intensityErrors = new double[displayedPeaks.length];
+	    		minErrors = new double[displayedPeaks.length];
+	    	}
+
+	    	PeakInvestigatorDataPoint dpPI = (PeakInvestigatorDataPoint) dp;
+	    	mzErrors[i] = dpPI.getMzError();
+	    	intensityErrors[i] = dpPI.getIntensityError();
+	    	minErrors[i] = dpPI.getMzMinimumError();
+	    }
 	}
 
 	label = "Peaks in " + peakList.getName();
@@ -138,4 +153,83 @@ public class PeakListDataSet extends AbstractXYDataset implements
 	return getYValue(series, item);
     }
 
+	public XYDataset getErrorBarDataSet() {
+		if (mzErrors != null && mzErrors.length > 0) {
+			return new ErrorBarDataSet();
+		}
+
+		return null;
+	}
+
+	public class ErrorBarDataSet extends AbstractXYDataset implements
+			IntervalXYDataset {
+
+		private static final long serialVersionUID = 1L;
+		private static final double MULTIPLIER = 1.96;
+
+		@Override
+		public int getItemCount(int series) {
+			return mzValues.length;
+		}
+
+		@Override
+		public Number getX(int series, int item) {
+			return mzValues[item];
+		}
+
+		@Override
+		public Number getY(int series, int item) {
+			return intensityValues[item];
+		}
+
+		@Override
+		public Number getStartX(int series, int item) {
+			return mzValues[item] - MULTIPLIER * mzErrors[item];
+		}
+
+		@Override
+		public double getStartXValue(int series, int item) {
+			return (double) getStartX(series, item);
+		}
+
+		@Override
+		public Number getEndX(int series, int item) {
+			return mzValues[item] + MULTIPLIER * mzErrors[item];
+		}
+
+		@Override
+		public double getEndXValue(int series, int item) {
+			return (double) getEndX(series, item);
+		}
+
+		@Override
+		public Number getStartY(int series, int item) {
+			return intensityValues[item] - MULTIPLIER * intensityErrors[item];
+		}
+
+		@Override
+		public double getStartYValue(int series, int item) {
+			return (double) getStartY(series, item);
+		}
+
+		@Override
+		public Number getEndY(int series, int item) {
+			return intensityValues[item] + MULTIPLIER * intensityErrors[item];
+		}
+
+		@Override
+		public double getEndYValue(int series, int item) {
+			return (double) getEndY(series, item);
+		}
+
+		@Override
+		public int getSeriesCount() {
+			return 1;
+		}
+
+		@Override
+		public Comparable<String> getSeriesKey(int series) {
+			return label;
+		}
+    }
 }
