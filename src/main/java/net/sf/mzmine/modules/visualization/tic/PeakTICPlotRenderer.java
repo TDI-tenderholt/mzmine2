@@ -29,6 +29,7 @@ import org.jfree.chart.plot.CrosshairState;
 import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
+import org.jfree.chart.renderer.xy.XYErrorRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.data.xy.XYDataset;
 
@@ -39,6 +40,8 @@ public class PeakTICPlotRenderer extends XYAreaRenderer {
      */
     private static final long serialVersionUID = 1L;
     private static final float OPACITY = 0.6f;
+
+    private final XYErrorRenderer errorRenderer = new XYErrorRenderer();
 
     private static Composite makeComposite(final float alpha) {
 
@@ -56,5 +59,15 @@ public class PeakTICPlotRenderer extends XYAreaRenderer {
 	g2.setComposite(makeComposite(OPACITY));
 	super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis,
 		dataSet, series, item, crosshairState, pass);
+
+    if (dataSet instanceof PeakDataSet) {
+    	XYDataset errorDataSet = ((PeakDataSet) dataSet).getErrorBarDataSet();
+    	if (errorDataSet != null) {
+    		errorRenderer.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis,
+    				errorDataSet, series, item, crosshairState, pass);
+    	}
     }
+
+    }
+
 }
