@@ -61,7 +61,7 @@ public class PeakInvestigatorMzTolerance implements MZTolerance {
 
 	@Override
 	public void updateFromParameterSet(ParameterSet parameterSet) {
-		confidenceLevel = PeakInvestigatorMzToleranceParameters.confidenceLevel
+		confidenceLevel = parameterSet.getParameter(PeakInvestigatorMzToleranceParameters.confidenceLevel)
 				.getValue();
 	}
 

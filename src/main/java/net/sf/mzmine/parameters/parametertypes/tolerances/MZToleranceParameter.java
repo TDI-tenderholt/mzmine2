@@ -69,7 +69,9 @@ public class MZToleranceParameter implements
 
 	@Override
 	public MZToleranceComponent createEditingComponent() {
-		return new MZToleranceComponent(mzTolerances);
+		MZToleranceComponent component = new MZToleranceComponent(mzTolerances);
+		component.setValue(value);
+		return component;
 	}
 
 	@Override
@@ -103,40 +105,36 @@ public class MZToleranceParameter implements
 	@Override
 	public void loadValueFromXML(Element xmlElement) {
 		// Set some default values
-		double mzTolerance = 0.001;
-		double ppmTolerance = 5;
-		NodeList items = xmlElement.getElementsByTagName("absolutetolerance");
-		for (int i = 0; i < items.getLength(); i++) {
-			String itemString = items.item(i).getTextContent();
-			mzTolerance = Double.parseDouble(itemString);
-		}
-		items = xmlElement.getElementsByTagName("ppmtolerance");
-		for (int i = 0; i < items.getLength(); i++) {
-			String itemString = items.item(i).getTextContent();
-			ppmTolerance = Double.parseDouble(itemString);
+		NodeList items = xmlElement.getElementsByTagName("type");
+		if (items.getLength() != 1) {
+			return;
 		}
 
-// TODO:		this.value = new MaximumMZTolerance(mzTolerance, ppmTolerance);
+		String type = items.item(0).getTextContent();
+		Class<?> clazz;
+		try {
+			clazz = Class.forName(type);
+			value = (MZTolerance) clazz.newInstance();
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		ParameterSet parameters = value.getParameterSet();
+		parameters.loadValuesFromXML(xmlElement);
+		value.updateFromParameterSet(parameters);
 	}
 
 	@Override
 	public void saveValueToXML(Element xmlElement) {
 		if (value == null)
 			return;
-		if (value instanceof MaximumMZTolerance) {
-			MaximumMZTolerance mzTolerance = (MaximumMZTolerance) value;
-			Document parentDocument = xmlElement.getOwnerDocument();
-			Element newElement = parentDocument
-					.createElement("absolutetolerance");
-			newElement.setTextContent(String.valueOf(mzTolerance
-					.getMzTolerance()));
-			xmlElement.appendChild(newElement);
-			newElement = parentDocument.createElement("ppmtolerance");
-			newElement.setTextContent(String.valueOf(mzTolerance
-					.getPpmTolerance()));
-			xmlElement.appendChild(newElement);
-		}
 
+		Document parentDocument = xmlElement.getOwnerDocument();
+		Element newElement = parentDocument.createElement("type");
+		newElement.setTextContent(value.getClass().getName());
+		xmlElement.appendChild(newElement);
+		value.getParameterSet().saveValuesToXML(xmlElement);
 	}
 
 	@Override
