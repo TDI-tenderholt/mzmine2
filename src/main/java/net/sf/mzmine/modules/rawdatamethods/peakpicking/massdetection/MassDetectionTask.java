@@ -27,8 +27,6 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleMassList;
 import net.sf.mzmine.modules.MZmineProcessingStep;
-import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
-import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorMassList;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -118,13 +116,7 @@ public class MassDetectionTask extends AbstractTask {
             DataPoint mzPeaks[] = detector.getMassValues(scan, job, massDetector.getParameterSet());
 
 			if (mzPeaks != null) {
-				MassList newMassList;
-				if (mzPeaks[0] instanceof PeakInvestigatorDataPoint) {
-					newMassList = new PeakInvestigatorMassList(name, scan,
-							mzPeaks);
-				} else {
-					newMassList = new SimpleMassList(name, scan, mzPeaks);
-				}
+				MassList newMassList = new SimpleMassList(name, scan, mzPeaks);
 
 				// Add new mass list to the scan
 				scan.addMassList(newMassList);
