@@ -24,6 +24,7 @@ import org.jfree.data.xy.IntervalXYDataset;
 import org.jfree.data.xy.XYDataset;
 
 import net.sf.mzmine.datamodel.MassList;
+import net.sf.mzmine.desktop.preferences.MZminePreferences;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 /**
@@ -54,6 +55,7 @@ public class MassListDataSet extends DataPointsDataSet {
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
+		private final double MULTIPLIER = MZminePreferences.numOfStdDevs.getValue();
 
 		@Override
 		public int getItemCount(int series) {
@@ -84,7 +86,7 @@ public class MassListDataSet extends DataPointsDataSet {
 		public Number getStartX(int series, int item) {
 			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
 				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
-				return dataPoint.getMZ() - 1.96 * dataPoint.getMzError();
+				return dataPoint.getMZ() - MULTIPLIER * dataPoint.getMzError();
 			}
 
 			return getX(series, item);
@@ -99,7 +101,7 @@ public class MassListDataSet extends DataPointsDataSet {
 		public Number getEndX(int series, int item) {
 			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
 				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
-				return dataPoint.getMZ() + 1.96 * dataPoint.getMzError();
+				return dataPoint.getMZ() + MULTIPLIER * dataPoint.getMzError();
 			}
 
 			return getX(series, item);
@@ -114,7 +116,7 @@ public class MassListDataSet extends DataPointsDataSet {
 		public Number getStartY(int series, int item) {
 			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
 				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
-				return dataPoint.getIntensity() - 1.96 * dataPoint.getIntensityError();
+				return dataPoint.getIntensity() - MULTIPLIER * dataPoint.getIntensityError();
 			}
 
 			return getY(series, item);
@@ -129,7 +131,7 @@ public class MassListDataSet extends DataPointsDataSet {
 		public Number getEndY(int series, int item) {
 			if (mzPeaks[item] instanceof PeakInvestigatorDataPoint) {
 				PeakInvestigatorDataPoint dataPoint = (PeakInvestigatorDataPoint) mzPeaks[item];
-				return dataPoint.getIntensity() + 1.96 * dataPoint.getIntensityError();
+				return dataPoint.getIntensity() + MULTIPLIER * dataPoint.getIntensityError();
 			}
 
 			return getY(series, item);

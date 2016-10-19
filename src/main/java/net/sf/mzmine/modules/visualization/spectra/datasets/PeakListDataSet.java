@@ -25,6 +25,7 @@ import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.desktop.preferences.MZminePreferences;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 import org.jfree.data.xy.AbstractXYDataset;
@@ -165,7 +166,7 @@ public class PeakListDataSet extends AbstractXYDataset implements
 			IntervalXYDataset {
 
 		private static final long serialVersionUID = 1L;
-		private static final double MULTIPLIER = 1.96;
+		private final double MULTIPLIER = MZminePreferences.numOfStdDevs.getValue();
 
 		@Override
 		public int getItemCount(int series) {
