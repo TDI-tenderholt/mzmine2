@@ -21,6 +21,7 @@ package net.sf.mzmine.parameters.parametertypes.tolerances;
 
 import java.util.Collection;
 
+import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
 
 import org.w3c.dom.Document;
@@ -146,17 +147,9 @@ public class MZToleranceParameter implements
 			errorMessages.add(name + " is not set properly");
 			return false;
 		}
-		if (value instanceof MaximumMZTolerance) {
-			MaximumMZTolerance mzTolerance = (MaximumMZTolerance) value;
-			if ((mzTolerance.getMzTolerance() <= 0.0)
-					&& (mzTolerance.getPpmTolerance() <= 0.0)) {
-				errorMessages.add(name + " must be greater than zero");
-				return false;
-			}
-		} else {
-			return false;
-		}
-		return true;
+
+		ParameterSet parameters = value.getParameterSet();
+		return parameters.checkParameterValues(errorMessages);
 	}
 
 }
