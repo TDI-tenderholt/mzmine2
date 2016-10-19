@@ -20,6 +20,7 @@
 package net.sf.mzmine.parameters.parametertypes.tolerances;
 
 import java.awt.Window;
+import java.text.DecimalFormat;
 
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.parameters.Parameter;
@@ -119,9 +120,11 @@ public class MaximumMZTolerance implements MZTolerance {
 
     public static class MaximumMzToleranceParameters extends SimpleParameterSet {
     	private static final DoubleParameter mzTolerance = new DoubleParameter(
-    			"mzTolerance", "The absolute (in m/z) tolerance");
+				"mzTolerance", "The absolute (in m/z) tolerance",
+				new DecimalFormat("0.0000"), 0.015, 0.0, Double.MAX_VALUE);
     	private static final DoubleParameter ppmTolerance = new DoubleParameter(
-    			"ppmTolerance", "The relative (in ppm) tolerance");
+				"ppmTolerance", "The relative (in ppm) tolerance",
+				new DecimalFormat("0.00"), 10.0, 0.0, Double.MAX_VALUE);
 
     	public MaximumMzToleranceParameters() {
     		super(new Parameter<?>[] { mzTolerance, ppmTolerance});
