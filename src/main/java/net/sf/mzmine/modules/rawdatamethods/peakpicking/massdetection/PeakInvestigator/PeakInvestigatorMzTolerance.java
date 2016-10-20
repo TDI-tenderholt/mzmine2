@@ -77,7 +77,7 @@ public class PeakInvestigatorMzTolerance implements MZTolerance {
 
 	@Override
 	public String toString() {
-		return String.format("±%d confidence level", confidenceLevel);
+		return String.format("%d%% confidence level", confidenceLevel);
 	}
 
 	private void updateMultiplier() {
