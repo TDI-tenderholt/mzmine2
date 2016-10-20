@@ -1,6 +1,11 @@
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator;
 
 import java.awt.Window;
+import java.util.logging.Logger;
+
+import org.apache.commons.math.MathException;
+import org.apache.commons.math.distribution.NormalDistribution;
+import org.apache.commons.math.distribution.NormalDistributionImpl;
 
 import com.google.common.collect.Range;
 
@@ -14,14 +19,18 @@ import net.sf.mzmine.util.ExitCode;
 
 public class PeakInvestigatorMzTolerance implements MZTolerance {
 
+	private Logger logger = Logger.getLogger(this.getClass().getName());
 	private int confidenceLevel;
+	private double multiplier;
 
 	public PeakInvestigatorMzTolerance() {
-		this.confidenceLevel = 68;
+		this.confidenceLevel = 95;
+		updateMultiplier();
 	}
 
 	public PeakInvestigatorMzTolerance(Integer confidenceLevel) {
 		this.confidenceLevel = confidenceLevel;
+		updateMultiplier();
 	}
 
 	@Override
@@ -38,7 +47,7 @@ public class PeakInvestigatorMzTolerance implements MZTolerance {
 
 		PeakInvestigatorDataPoint dp = (PeakInvestigatorDataPoint) dataPoint;
 		final double mzValue = dataPoint.getMZ();
-		final double absoluteTolerance = Math.max(dp.getMzError(),
+		final double absoluteTolerance = Math.max(multiplier * dp.getMzError(),
 				dp.getMzMinimumError());
 		return Range.closed(mzValue - absoluteTolerance, mzValue
 				+ absoluteTolerance);
@@ -63,11 +72,24 @@ public class PeakInvestigatorMzTolerance implements MZTolerance {
 	public void updateFromParameterSet(ParameterSet parameterSet) {
 		confidenceLevel = parameterSet.getParameter(PeakInvestigatorMzToleranceParameters.confidenceLevel)
 				.getValue();
+		updateMultiplier();
 	}
 
 	@Override
 	public String toString() {
 		return String.format("±%d confidence level", confidenceLevel);
+	}
+
+	private void updateMultiplier() {
+		final NormalDistribution distribution = new NormalDistributionImpl();
+		multiplier = 0.0;
+		try {
+			multiplier = distribution
+					.inverseCumulativeProbability(1.0 - (100.0 - confidenceLevel) / 200.0);
+		} catch (MathException e) {
+			logger.warning("Unable to determine confidence level. Using 0%.");
+		}
+
 	}
 
 	static class PeakInvestigatorMzToleranceParameters extends
