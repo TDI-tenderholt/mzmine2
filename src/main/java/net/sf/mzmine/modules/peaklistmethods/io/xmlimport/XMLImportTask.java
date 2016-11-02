@@ -33,7 +33,7 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.modules.projectmethods.projectload.PeakListOpenHandler;
-import net.sf.mzmine.modules.projectmethods.projectload.version_2_0.PeakListOpenHandler_2_0;
+import net.sf.mzmine.modules.projectmethods.projectload.version_2_5.PeakListOpenHandler_2_5;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -131,7 +131,7 @@ public class XMLImportTask extends AbstractTask {
                 dataFilesIDMap.put(file.getName(), file);
             }
 
-            peakListOpenHander = new PeakListOpenHandler_2_0(dataFilesIDMap);
+            peakListOpenHander = new PeakListOpenHandler_2_5(dataFilesIDMap);
 
             buildingPeakList = peakListOpenHander.readPeakList(finalStream);
             finalStream.close();
