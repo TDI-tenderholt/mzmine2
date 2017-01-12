@@ -22,8 +22,12 @@ package net.sf.mzmine.modules.visualization.tic;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.desktop.preferences.MZminePreferences;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 import org.jfree.data.xy.AbstractXYDataset;
+import org.jfree.data.xy.IntervalXYDataset;
+import org.jfree.data.xy.XYDataset;
 
 /**
  * Integrated peak area data set. Separate data set is created for every peak
@@ -38,6 +42,7 @@ public class PeakDataSet extends AbstractXYDataset {
     private final Feature peak;
     private final double[] retentionTimes;
     private final double[] intensities;
+    private double[] intensityErrors = null;
     private final double[] mzValues;
     private final String name;
     private final int peakItem;
@@ -77,16 +82,23 @@ public class PeakDataSet extends AbstractXYDataset {
 	    // Copy RT and m/z.
 	    retentionTimes[i] = dataFile.getScan(scanNumber).getRetentionTime();
 	    final DataPoint dataPoint = peak.getDataPoint(scanNumber);
-	    if (dataPoint == null) {
+			if (dataPoint == null) {
 
-		mzValues[i] = 0.0;
-		intensities[i] = 0.0;
+				mzValues[i] = 0.0;
+				intensities[i] = 0.0;
 
-	    } else {
+			} else {
 
-		mzValues[i] = dataPoint.getMZ();
-		intensities[i] = dataPoint.getIntensity();
-	    }
+				mzValues[i] = dataPoint.getMZ();
+				intensities[i] = dataPoint.getIntensity();
+				if (dataPoint instanceof PeakInvestigatorDataPoint) {
+					if (intensityErrors == null) {
+						intensityErrors = new double[scanCount];
+					}
+					intensityErrors[i] = ((PeakInvestigatorDataPoint) dataPoint)
+							.getIntensityError();
+				}
+			}
 	}
 
 	peakItem = peakIndex;
@@ -137,5 +149,86 @@ public class PeakDataSet extends AbstractXYDataset {
 
     public boolean isPeak(final int item) {
 	return item == peakItem;
+    }
+
+    public XYDataset getErrorBarDataSet() {
+		if (intensityErrors != null) {
+			return new ErrorBarDataSet();
+		}
+
+		return null;
+    }
+
+    public class ErrorBarDataSet extends AbstractXYDataset implements
+	IntervalXYDataset {
+
+		private static final long serialVersionUID = 1L;
+		private final double MULTIPLIER = MZminePreferences.numOfStdDevs.getValue();
+
+		@Override
+		public int getItemCount(int series) {
+			return retentionTimes.length;
+		}
+
+		@Override
+		public Number getX(int series, int item) {
+			return retentionTimes[item];
+		}
+
+		@Override
+		public Number getY(int series, int item) {
+			return intensities[item];
+		}
+
+		@Override
+		public Number getStartX(int series, int item) {
+			return getX(series, item);
+		}
+
+		@Override
+		public double getStartXValue(int series, int item) {
+			return (double) getStartX(series, item);
+		}
+
+		@Override
+		public Number getEndX(int series, int item) {
+			return getX(series, item);
+		}
+
+		@Override
+		public double getEndXValue(int series, int item) {
+			return (double) getEndX(series, item);
+		}
+
+		@Override
+		public Number getStartY(int series, int item) {
+			return intensities[item] - MULTIPLIER * intensityErrors[item];
+		}
+
+		@Override
+		public double getStartYValue(int series, int item) {
+			return (double) getStartY(series, item);
+		}
+
+		@Override
+		public Number getEndY(int series, int item) {
+			return intensities[item] + MULTIPLIER * intensityErrors[item];
+		}
+
+		@Override
+		public double getEndYValue(int series, int item) {
+			return (double) getEndY(series, item);
+		}
+
+		@Override
+		public int getSeriesCount() {
+			return 1;
+		}
+
+		@Override
+		public Comparable<String> getSeriesKey(int series) {
+			return peak.toString();
+		}
+    	
     }
 }

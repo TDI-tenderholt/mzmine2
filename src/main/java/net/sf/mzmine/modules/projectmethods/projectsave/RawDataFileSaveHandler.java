@@ -54,7 +54,7 @@ class RawDataFileSaveHandler {
     private int numOfScans, completedScans;
     private ZipOutputStream zipOutputStream;
     private boolean canceled = false;
-    private Map<Integer, Long> dataPointsOffsets;
+    private TreeMap<Integer, Long> dataPointsOffsets;
     private Map<Integer, Long> consolidatedDataPointsOffsets;
     private Map<Integer, Integer> dataPointsLengths;
     private double progress = 0;
@@ -108,7 +108,13 @@ class RawDataFileSaveHandler {
 	    final long offset = dataPointsOffsets.get(storageID);
 	    dataPointsFile.seek(offset);
 
-	    final int bytes = dataPointsLengths.get(storageID) * 4 * 2;
+	    final int bytes;
+	    Integer key = dataPointsOffsets.higherKey(storageID);
+	    if (key == null) {
+	    	bytes = (int) (dataPointsFile.length() - offset);
+	    } else {
+	    	bytes = (int) (dataPointsOffsets.get(key) - offset);
+	    }
 	    consolidatedDataPointsOffsets.put(storageID, newOffset);
 	    if (buffer.length < bytes) {
 		buffer = new byte[bytes * 2];

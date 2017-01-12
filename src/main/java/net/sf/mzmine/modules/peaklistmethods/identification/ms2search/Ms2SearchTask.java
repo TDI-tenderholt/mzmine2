@@ -142,7 +142,7 @@ class Ms2SearchTask extends AbstractTask {
         setStatus(TaskStatus.PROCESSING);
 
         logger.info("Starting MS2 similarity search between " + peakList1 + "and"
-                + peakList2 + "with mz tolerance:"+mzTolerance.getPpmTolerance());
+                + peakList2 + "with mz tolerance: " + mzTolerance);
 
         Ms2SearchResult searchResult;
         PeakListRow rows1[] = peakList1.getRows();
@@ -196,7 +196,6 @@ class Ms2SearchTask extends AbstractTask {
             double intensityThreshold, MZTolerance mzRange, String massList) {
 
         double runningScoreTotal = 0.0;
-        double mzRangePPM = mzRange.getPpmTolerance();
 
         // Fetch 1st feature MS2 scan.
         int ms2ScanNumberA = featureA.getMostIntenseFragmentScanNumber();
@@ -258,7 +257,8 @@ class Ms2SearchTask extends AbstractTask {
         for (int i = 0; i < ionsA.length; i++) {
             
             double iMZ = ionsA[i].getMZ();
-            double mzRangeAbsolute = iMZ * 1e-6 * mzRangePPM;
+            Range<Double> range = mzTolerance.getToleranceRange(iMZ);
+            double mzRangeAbsolute = (range.upperEndpoint() - range.lowerEndpoint()) / 2;
             
             if (iMZ - mzRangeAbsolute > ionsBMaxMZ)
                 break; //Potential speedup heuristic. If any i is greater than the max of j, no more matches are possible.

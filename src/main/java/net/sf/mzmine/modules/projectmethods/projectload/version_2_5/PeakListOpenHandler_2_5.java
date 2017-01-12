@@ -46,6 +46,7 @@ import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.modules.projectmethods.projectload.PeakListOpenHandler;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator.PeakInvestigatorDataPoint;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -67,7 +68,7 @@ public class PeakListOpenHandler_2_5 extends DefaultHandler
     private double mass, rt, area;
     private int[] scanNumbers;
     private double height;
-    private double[] masses, intensities;
+    private double[] masses, intensities, massErrors, intensityErrors, minimumErrors;
     private String peakStatus, peakListName, name, identityPropertyName,
             rawDataFileID;
     private Hashtable<String, String> identityProperties;
@@ -332,6 +333,60 @@ public class PeakListOpenHandler_2_5 extends DefaultHandler
             }
         }
 
+        // <MZ ERROR>
+        if (qName.equals(PeakListElementName_2_5.MZ_ERROR.getElementName())) {
+        	
+        	byte[] bytes = Base64.decodeToBytes(getTextOfElement());
+        	if (bytes.length / 4 == numOfMZpeaks) {
+        		DataInputStream dataInputStream = new DataInputStream(
+                        new ByteArrayInputStream(bytes));
+        		massErrors = new double[numOfMZpeaks];
+        		for (int i = 0; i < numOfMZpeaks; i++) {
+        			try {
+        				massErrors[i] = (double) dataInputStream.readFloat();
+        			} catch (IOException ex) {
+        				throw new SAXException(ex);
+        			}
+        		}
+        	}
+        }
+
+        // <INTENSITY ERROR>
+        if (qName.equals(PeakListElementName_2_5.HEIGHT_ERROR.getElementName())) {
+        	
+        	byte[] bytes = Base64.decodeToBytes(getTextOfElement());
+        	if (bytes.length / 4 == numOfMZpeaks) {
+        		DataInputStream dataInputStream = new DataInputStream(
+                        new ByteArrayInputStream(bytes));
+        		intensityErrors = new double[numOfMZpeaks];
+        		for (int i = 0; i < numOfMZpeaks; i++) {
+        			try {
+        				intensityErrors[i] = (double) dataInputStream.readFloat();
+        			} catch (IOException ex) {
+        				throw new SAXException(ex);
+        			}
+        		}
+        	}
+        }
+
+        // <MINIMUM MZ ERROR>
+        if (qName.equals(PeakListElementName_2_5.MINIMUM_ERROR.getElementName())) {
+        	
+        	byte[] bytes = Base64.decodeToBytes(getTextOfElement());
+        	if (bytes.length / 4 == numOfMZpeaks) {
+        		DataInputStream dataInputStream = new DataInputStream(
+                        new ByteArrayInputStream(bytes));
+        		minimumErrors = new double[numOfMZpeaks];
+        		for (int i = 0; i < numOfMZpeaks; i++) {
+        			try {
+        				minimumErrors[i] = (double) dataInputStream.readFloat();
+        			} catch (IOException ex) {
+        				throw new SAXException(ex);
+        			}
+        		}
+        	}
+        }
+
         // <PEAK>
         if (qName.equals(PeakListElementName_2_5.PEAK.getElementName())) {
 
@@ -368,7 +423,16 @@ public class PeakListOpenHandler_2_5 extends DefaultHandler
                 }
 
                 if (mz > 0.0) {
-                    mzPeaks[i] = new SimpleDataPoint(mz, intensity);
+                	if (massErrors != null && massErrors.length > 0) {
+                		double mzError = massErrors[i];
+                		double intensityError = intensityErrors[i];
+                		double minError = minimumErrors[i];
+						mzPeaks[i] = new PeakInvestigatorDataPoint(mz,
+								intensity, mzError, intensityError, minError);
+					} else {
+						mzPeaks[i] = new SimpleDataPoint(mz, intensity);
+					}
+
                     if (peakMZRange == null)
                         peakMZRange = Range.singleton(mz);
                     else

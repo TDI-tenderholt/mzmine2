@@ -19,14 +19,20 @@
 
 package net.sf.mzmine.datamodel;
 
+import java.nio.FloatBuffer;
+
 /**
  * This interface represents one data point of a spectra (m/z and intensity).
  * Data point is immutable once created, to make things simple.
  */
 public interface DataPoint {
 
+    public int getNumberOfValues();
+
     public double getMZ();
 
     public double getIntensity();
+
+    public void addToBuffer(FloatBuffer buffer);
 
 }

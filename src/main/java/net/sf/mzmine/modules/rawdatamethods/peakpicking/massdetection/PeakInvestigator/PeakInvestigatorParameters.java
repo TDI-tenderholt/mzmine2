@@ -37,7 +37,6 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
-import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelectionType;
 import net.sf.mzmine.util.ExitCode;

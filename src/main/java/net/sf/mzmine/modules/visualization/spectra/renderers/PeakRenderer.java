@@ -24,22 +24,31 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
+import net.sf.mzmine.modules.visualization.spectra.datasets.MassListDataSet;
+import net.sf.mzmine.modules.visualization.spectra.datasets.PeakListDataSet;
+
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.event.RendererChangeListener;
 import org.jfree.chart.plot.CrosshairState;
 import org.jfree.chart.plot.DrawingSupplier;
 import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.AbstractXYItemRenderer;
 import org.jfree.chart.renderer.xy.StandardXYBarPainter;
 import org.jfree.chart.renderer.xy.XYBarRenderer;
+import org.jfree.chart.renderer.xy.XYErrorRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.data.xy.XYDataset;
 
-public class PeakRenderer extends XYBarRenderer {
+public class PeakRenderer extends AbstractXYItemRenderer {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
+
+    private final XYBarRenderer barRenderer = new XYBarRenderer();
+    private final XYErrorRenderer errorRenderer = new XYErrorRenderer();
 
     public static final float TRANSPARENCY = 0.8f;
 
@@ -53,31 +62,67 @@ public class PeakRenderer extends XYBarRenderer {
 	this.isTransparent = isTransparent;
 
 	// Set painting color
-	setBasePaint(color);
+	barRenderer.setBasePaint(color);
+	barRenderer.setSeriesPaint(0, color);
+	barRenderer.setSeriesOutlinePaint(0, color);
+	errorRenderer.setBasePaint(color);
+	errorRenderer.setSeriesPaint(0, color);
 
 	// Shadow makes fake peaks
-	setShadowVisible(false);
+	barRenderer.setShadowVisible(false);
 
 	// Set the tooltip generator
 	SpectraToolTipGenerator tooltipGenerator = new SpectraToolTipGenerator();
-	setBaseToolTipGenerator(tooltipGenerator);
+	barRenderer.setBaseToolTipGenerator(tooltipGenerator);
+	errorRenderer.setBaseToolTipGenerator(tooltipGenerator);
 
 	// We want to paint the peaks using simple color without any gradient
 	// effects
-	setBarPainter(new StandardXYBarPainter());
+	barRenderer.setBarPainter(new StandardXYBarPainter());
     }
 
-    public void drawItem(Graphics2D g2, XYItemRendererState state,
-	    Rectangle2D dataArea, PlotRenderingInfo info, XYPlot plot,
-	    ValueAxis domainAxis, ValueAxis rangeAxis, XYDataset dataset,
-	    int series, int item, CrosshairState crosshairState, int pass) {
+	public void drawItem(Graphics2D g2, XYItemRendererState state,
+			Rectangle2D dataArea, PlotRenderingInfo info, XYPlot plot,
+			ValueAxis domainAxis, ValueAxis rangeAxis, XYDataset dataset,
+			int series, int item, CrosshairState crosshairState, int pass) {
 
-	if (isTransparent)
-	    g2.setComposite(alphaComp);
+		if (isTransparent)
+			g2.setComposite(alphaComp);
 
-	super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis,
-		dataset, series, item, crosshairState, pass);
+		barRenderer.drawItem(g2, state, dataArea, info, plot, domainAxis,
+				rangeAxis, dataset, series, item, crosshairState, pass);
 
+		XYDataset errorDataSet = null;
+		if (dataset instanceof MassListDataSet) {
+			errorDataSet = ((MassListDataSet) dataset).getErrorBarDataSet();
+		} else if (dataset instanceof PeakListDataSet) {
+			errorDataSet = ((PeakListDataSet) dataset).getErrorBarDataSet();
+		}
+
+		if (errorDataSet != null) {
+			errorRenderer
+					.drawItem(g2, state, dataArea, info, plot, domainAxis,
+							rangeAxis, errorDataSet, series, item,
+							crosshairState, pass);
+		}
+	}
+
+    @Override
+	public void setPlot(XYPlot plot) {
+    	barRenderer.setPlot(plot);
+    	errorRenderer.setPlot(plot);
+    }
+
+    @Override
+    public void addChangeListener(RendererChangeListener listener) {
+    	barRenderer.addChangeListener(listener);
+    	errorRenderer.addChangeListener(listener);
+    }
+
+    @Override
+    public void removeChangeListener(RendererChangeListener listener) {
+    	barRenderer.removeChangeListener(listener);
+    	errorRenderer.removeChangeListener(listener);
     }
 
     /**

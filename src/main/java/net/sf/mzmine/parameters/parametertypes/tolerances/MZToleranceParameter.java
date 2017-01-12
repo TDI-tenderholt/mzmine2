@@ -21,6 +21,7 @@ package net.sf.mzmine.parameters.parametertypes.tolerances;
 
 import java.util.Collection;
 
+import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
 
 import org.w3c.dom.Document;
@@ -28,110 +29,123 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class MZToleranceParameter implements
-	UserParameter<MZTolerance, MZToleranceComponent> {
+		UserParameter<MZTolerance, MZToleranceComponent> {
 
-    private String name, description;
-    private MZTolerance value;
+	private final MZTolerance[] mzTolerances;
 
-    public MZToleranceParameter() {
-	this(
-		"m/z tolerance",
-		"Maximum allowed difference between two m/z values to be considered same.\n"
-			+ "The value is specified both as absolute tolerance (in m/z) and relative tolerance (in ppm).\n"
-			+ "The tolerance range is calculated using maximum of the absolute and relative tolerances.");
-    }
+	private String name, description;
+	private MZTolerance value;
 
-    public MZToleranceParameter(String name, String description) {
-	this.name = name;
-	this.description = description;
-    }
-
-    @Override
-    public String getName() {
-	return name;
-    }
-
-    @Override
-    public String getDescription() {
-	return description;
-    }
-
-    @Override
-    public MZToleranceComponent createEditingComponent() {
-	return new MZToleranceComponent();
-    }
-
-    @Override
-    public MZToleranceParameter cloneParameter() {
-	MZToleranceParameter copy = new MZToleranceParameter(name, description);
-	copy.setValue(this.getValue());
-	return copy;
-    }
-
-    @Override
-    public void setValueFromComponent(MZToleranceComponent component) {
-	value = component.getValue();
-    }
-
-    @Override
-    public void setValueToComponent(MZToleranceComponent component,
-	    MZTolerance newValue) {
-	component.setValue(newValue);
-    }
-
-    @Override
-    public MZTolerance getValue() {
-	return value;
-    }
-
-    @Override
-    public void setValue(MZTolerance newValue) {
-	this.value = newValue;
-    }
-
-    @Override
-    public void loadValueFromXML(Element xmlElement) {
-	// Set some default values
-	double mzTolerance = 0.001;
-	double ppmTolerance = 5;
-	NodeList items = xmlElement.getElementsByTagName("absolutetolerance");
-	for (int i = 0; i < items.getLength(); i++) {
-	    String itemString = items.item(i).getTextContent();
-	    mzTolerance = Double.parseDouble(itemString);
-	}
-	items = xmlElement.getElementsByTagName("ppmtolerance");
-	for (int i = 0; i < items.getLength(); i++) {
-	    String itemString = items.item(i).getTextContent();
-	    ppmTolerance = Double.parseDouble(itemString);
+	public MZToleranceParameter() {
+		this(new MZTolerance[] { new MaximumMZTolerance() });
 	}
 
-	this.value = new MZTolerance(mzTolerance, ppmTolerance);
-    }
-
-    @Override
-    public void saveValueToXML(Element xmlElement) {
-	if (value == null)
-	    return;
-	Document parentDocument = xmlElement.getOwnerDocument();
-	Element newElement = parentDocument.createElement("absolutetolerance");
-	newElement.setTextContent(String.valueOf(value.getMzTolerance()));
-	xmlElement.appendChild(newElement);
-	newElement = parentDocument.createElement("ppmtolerance");
-	newElement.setTextContent(String.valueOf(value.getPpmTolerance()));
-	xmlElement.appendChild(newElement);
-    }
-
-    @Override
-    public boolean checkValue(Collection<String> errorMessages) {
-	if (value == null) {
-	    errorMessages.add(name + " is not set properly");
-	    return false;
+	public MZToleranceParameter(String name, String description) {
+		this(name, description, new MZTolerance[] { new MaximumMZTolerance() });
 	}
-	if ((value.getMzTolerance() <= 0.0) && (value.getPpmTolerance() <= 0.0)) {
-		errorMessages.add(name + " must be greater than zero");
-		return false;
+
+	public MZToleranceParameter(MZTolerance[] mzTolerances) {
+		this(
+				"m/z tolerance",
+				"The allowed difference between two m/z values to be considered same.",
+				mzTolerances);
 	}
-	return true;
-    }
+
+	public MZToleranceParameter(String name, String description, MZTolerance[] mzTolerances) {
+		this.name = name;
+		this.description = description;
+		this.mzTolerances = mzTolerances;
+	}
+
+	@Override
+	public String getName() {
+		return name;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
+	}
+
+	@Override
+	public MZToleranceComponent createEditingComponent() {
+		MZToleranceComponent component = new MZToleranceComponent(mzTolerances);
+		component.setValue(value);
+		return component;
+	}
+
+	@Override
+	public MZToleranceParameter cloneParameter() {
+		MZToleranceParameter copy = new MZToleranceParameter(name, description, mzTolerances);
+		copy.setValue(this.getValue());
+		return copy;
+	}
+
+	@Override
+	public void setValueFromComponent(MZToleranceComponent component) {
+		value = component.getValue();
+	}
+
+	@Override
+	public void setValueToComponent(MZToleranceComponent component,
+			MZTolerance newValue) {
+		component.setValue(newValue);
+	}
+
+	@Override
+	public MZTolerance getValue() {
+		return value;
+	}
+
+	@Override
+	public void setValue(MZTolerance newValue) {
+		this.value = newValue;
+	}
+
+	@Override
+	public void loadValueFromXML(Element xmlElement) {
+		// Set some default values
+		NodeList items = xmlElement.getElementsByTagName("type");
+		if (items.getLength() != 1) {
+			return;
+		}
+
+		String type = items.item(0).getTextContent();
+		Class<?> clazz;
+		try {
+			clazz = Class.forName(type);
+			value = (MZTolerance) clazz.newInstance();
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		ParameterSet parameters = value.getParameterSet();
+		parameters.loadValuesFromXML(xmlElement);
+		value.updateFromParameterSet(parameters);
+	}
+
+	@Override
+	public void saveValueToXML(Element xmlElement) {
+		if (value == null)
+			return;
+
+		Document parentDocument = xmlElement.getOwnerDocument();
+		Element newElement = parentDocument.createElement("type");
+		newElement.setTextContent(value.getClass().getName());
+		xmlElement.appendChild(newElement);
+		value.getParameterSet().saveValuesToXML(xmlElement);
+	}
+
+	@Override
+	public boolean checkValue(Collection<String> errorMessages) {
+		if (value == null) {
+			errorMessages.add(name + " is not set properly");
+			return false;
+		}
+
+		ParameterSet parameters = value.getParameterSet();
+		return parameters.checkParameterValues(errorMessages);
+	}
 
 }

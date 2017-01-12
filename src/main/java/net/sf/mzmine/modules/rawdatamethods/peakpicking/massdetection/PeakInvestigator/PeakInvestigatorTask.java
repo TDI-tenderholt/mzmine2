@@ -26,7 +26,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -656,11 +655,21 @@ public class PeakInvestigatorTask
 				if (line.startsWith("#") || line.isEmpty()) {
 					continue;
 				}
-	
+
+				DataPoint dp;
 				Scanner sc = new Scanner(line);
 				double mz  = sc.nextDouble();
 				double y   = sc.nextDouble();
-				mzPeaks.add(new SimpleDataPoint(mz, y));
+				if (sc.hasNextDouble()) {
+					double mzError = sc.nextDouble();
+					double intensityError = sc.nextDouble();
+					double mzMinimumError = sc.nextDouble();
+					dp = new PeakInvestigatorDataPoint(mz, y, mzError,
+							intensityError, mzMinimumError);
+				} else {
+					dp = new SimpleDataPoint(mz, y);
+				}
+				mzPeaks.add(dp);
 				sc.close();
 			}
 

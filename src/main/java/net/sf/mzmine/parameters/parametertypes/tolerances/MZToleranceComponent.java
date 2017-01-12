@@ -19,58 +19,92 @@
 
 package net.sf.mzmine.parameters.parametertypes.tolerances;
 
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import javax.swing.BorderFactory;
-import javax.swing.JLabel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
-public class MZToleranceComponent extends JPanel {
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
+import net.sf.mzmine.util.ExitCode;
 
-    /**
+public class MZToleranceComponent extends JPanel implements ActionListener {
+
+	/**
      * 
      */
-    private static final long serialVersionUID = 1L;
-    private final JTextField mzToleranceField, ppmToleranceField;
+	private static final long serialVersionUID = 1L;
 
-    public MZToleranceComponent() {
+	private JComboBox<MZTolerance> comboBox;
+	private JButton setButton;
 
-        setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+	public MZToleranceComponent(MZTolerance[] mzTolerances) {
 
-        mzToleranceField = new JTextField();
-        mzToleranceField.setColumns(6);
-        add(mzToleranceField);
+		super(new BorderLayout());
 
-        add(new JLabel("m/z  or"));
+		setBorder(BorderFactory.createEmptyBorder(0, 9, 0, 0));
 
-        ppmToleranceField = new JTextField();
-        ppmToleranceField.setColumns(6);
-        add(ppmToleranceField);
+		if (mzTolerances == null || mzTolerances.length == 0) {
+			throw new IllegalArgumentException(
+					"Invalid number of MZTolerance's passed to MZToleranceComponent()");
+		}
 
-        add(new JLabel("ppm"));
-    }
+		comboBox = new JComboBox<MZTolerance>(mzTolerances);
+		comboBox.addActionListener(this);
+		add(comboBox, BorderLayout.CENTER);
 
-    public void setValue(MZTolerance value) {
-        mzToleranceField.setText(String.valueOf(value.getMzTolerance()));
-        ppmToleranceField.setText(String.valueOf(value.getPpmTolerance()));
-    }
+		setButton = new JButton("...");
+		setButton.addActionListener(this);
+		setButton.setEnabled(true);
+		add(setButton, BorderLayout.EAST);
 
-    public MZTolerance getValue() {
-        try {
-            double mzTolerance = Double.parseDouble(mzToleranceField.getText().trim());
-            double ppmTolerance = Double
-                    .parseDouble(ppmToleranceField.getText().trim());
-            MZTolerance value = new MZTolerance(mzTolerance, ppmTolerance);
-            return value;
-        } catch (NumberFormatException e) {
-            return null;
-        }
+	}
 
-    }
+	public void setValue(MZTolerance value) {
+		comboBox.setSelectedItem(value);
+	}
 
-    @Override
-    public void setToolTipText(String toolTip) {
-        mzToleranceField.setToolTipText(toolTip);
-        ppmToleranceField.setToolTipText(toolTip);
-    }
+	public MZTolerance getValue() {
+		return (MZTolerance) comboBox.getSelectedItem();
+	}
+
+	@Override
+	public void setToolTipText(String toolTip) {
+		super.setToolTipText(toolTip);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		Object src = event.getSource();
+
+		MZTolerance selected = (MZTolerance) comboBox.getSelectedItem();
+		if (selected == null) {
+			setButton.setEnabled(false);
+			return;
+		}
+
+		ParameterSet parameterSet = selected.getParameterSet();
+
+		if (src == comboBox) {
+			setButton.setEnabled(parameterSet.getParameters().length > 0);
+		}
+
+		if (src == setButton) {
+			ParameterSetupDialog dialog = (ParameterSetupDialog) SwingUtilities
+					.getAncestorOfClass(ParameterSetupDialog.class, this);
+			if (dialog == null)
+				return;
+			ExitCode code = parameterSet.showSetupDialog(dialog, dialog.isValueCheckRequired());
+			if (code == ExitCode.OK) {
+				selected.updateFromParameterSet(parameterSet);
+			}
+		}
+
+	}
 
 }

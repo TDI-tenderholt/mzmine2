@@ -19,6 +19,7 @@
 
 package net.sf.mzmine.datamodel.impl;
 
+import java.nio.FloatBuffer;
 import java.text.Format;
 
 import net.sf.mzmine.datamodel.DataPoint;
@@ -81,5 +82,16 @@ public class SimpleDataPoint implements DataPoint {
 		+ intensityFormat.format(intensity);
 	return str;
     }
+
+	@Override
+	public int getNumberOfValues() {
+		return 2;
+	}
+
+	@Override
+	public void addToBuffer(FloatBuffer buffer) {
+		buffer.put((float) mz);
+		buffer.put((float) intensity);
+	}
 
 }

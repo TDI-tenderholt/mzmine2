@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.Range;
+
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.DBCompound;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.DBGateway;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDatabase;
@@ -45,7 +47,9 @@ public class PlantCycGateway implements DBGateway {
     public String[] findCompounds(double mass, MZTolerance mzTolerance,
 	    int numOfResults, ParameterSet parameters) throws IOException {
 
-	final double ppmTolerance = mzTolerance.getPpmToleranceForMass(mass);
+		final Range<Double> range = mzTolerance.getToleranceRange(mass);
+		final double ppmTolerance = (range.upperEndpoint() - range
+				.lowerEndpoint()) / (mass / 1e6);
 
 	final String queryAddress = "http://pmn.plantcyc.org/PLANT/search-query?type=COMPOUND&monoisomw="
 		+ mass + "&monoisotol=" + ppmTolerance;

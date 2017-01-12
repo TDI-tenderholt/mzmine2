@@ -34,8 +34,8 @@ public class DataPointsDataSet extends AbstractXYDataset implements
      * 
      */
     private static final long serialVersionUID = 1L;
-    private DataPoint mzPeaks[];
-    private String label;
+    protected DataPoint mzPeaks[];
+    protected String label;
 
     public DataPointsDataSet(String label, DataPoint mzPeaks[]) {
 	this.label = label;

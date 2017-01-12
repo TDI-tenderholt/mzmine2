@@ -26,6 +26,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalModuleParameter;
@@ -53,6 +54,11 @@ public class MZminePreferences extends SimpleParameterSet {
             "Intensity format", "Format of intensity values", true,
             new DecimalFormat("0.0E0"));
 
+	public static final DoubleParameter numOfStdDevs = new DoubleParameter(
+			"Number of standard deviations",
+			"Number of standard deviations used when plotting error bars",
+			new DecimalFormat("0.00"), 2.0, 0.0, 5.0);
+
     public static final NumOfThreadsParameter numOfThreads = new NumOfThreadsParameter();
 
     public static final OptionalModuleParameter proxySettings = new OptionalModuleParameter(
@@ -71,7 +77,7 @@ public class MZminePreferences extends SimpleParameterSet {
     public static final WindowSettingsParameter windowSetttings = new WindowSettingsParameter();
 
 	public static final StringParameter vtmxServer = new StringParameter(
-			"Veritomxy Server", "Server address for Veritomyx SaaS.",
+			"Veritomyx Server", "Server address for Veritomyx SaaS.",
 			"peakinvestigator.veritomyx.com");
 
 	public static final StringParameter vtmxUsername = new StringParameter(
@@ -87,9 +93,10 @@ public class MZminePreferences extends SimpleParameterSet {
     			0);
     		
     public MZminePreferences() {
-        super(new Parameter[] { mzFormat, rtFormat, intensityFormat,
-                numOfThreads, proxySettings, rExecPath, sendStatistics,
-                windowSetttings, vtmxServer, vtmxUsername, vtmxPassword, vtmxProject  });
+		super(new Parameter[] { mzFormat, rtFormat, intensityFormat,
+				numOfStdDevs, numOfThreads, proxySettings, rExecPath,
+				sendStatistics, windowSetttings, vtmxServer, vtmxUsername,
+				vtmxPassword, vtmxProject });
     }
 
     @Override
