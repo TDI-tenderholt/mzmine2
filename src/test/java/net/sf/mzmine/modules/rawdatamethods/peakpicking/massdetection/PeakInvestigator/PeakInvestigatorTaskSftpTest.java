@@ -25,8 +25,9 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpProgressMonitor;
 import com.veritomyx.PeakInvestigatorSaaS;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.BaseAction;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
+
 import com.veritomyx.actions.SftpAction;
 
 public class PeakInvestigatorTaskSftpTest {

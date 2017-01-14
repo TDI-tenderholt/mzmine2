@@ -28,7 +28,7 @@ import java.util.List;
 import com.jcraft.jsch.JSchException;
 import com.veritomyx.PeakInvestigatorSaaS;
 import com.veritomyx.VeritomyxSettings;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.PiVersionsAction;
 
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectorSetupDialog;

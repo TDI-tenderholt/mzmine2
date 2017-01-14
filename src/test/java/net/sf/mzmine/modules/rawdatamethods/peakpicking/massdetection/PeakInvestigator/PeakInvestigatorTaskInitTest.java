@@ -33,9 +33,9 @@ import com.google.common.collect.Range;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpProgressMonitor;
 import com.veritomyx.PeakInvestigatorSaaS;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.BaseAction;
 import com.veritomyx.actions.StatusAction;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
 import com.veritomyx.actions.InitAction;
 
 public class PeakInvestigatorTaskInitTest {

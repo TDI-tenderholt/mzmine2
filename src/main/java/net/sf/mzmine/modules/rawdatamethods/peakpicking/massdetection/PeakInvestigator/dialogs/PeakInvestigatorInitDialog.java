@@ -38,7 +38,7 @@ import org.apache.batik.ext.swing.GridBagConstants;
 import org.json.simple.parser.ParseException;
 
 import com.google.common.io.ByteStreams;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.InitAction;
 import com.veritomyx.actions.InitAction.ResponseTimeCosts;
 

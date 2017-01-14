@@ -59,7 +59,7 @@ import com.jcraft.jsch.SftpProgressMonitor;
 import com.veritomyx.ChecksumFileReader;
 import com.veritomyx.ChecksumFileReader.MissingChecksum;
 import com.veritomyx.PeakInvestigatorSaaS;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.DeleteAction;
 import com.veritomyx.actions.InitAction;
 import com.veritomyx.actions.RunAction;

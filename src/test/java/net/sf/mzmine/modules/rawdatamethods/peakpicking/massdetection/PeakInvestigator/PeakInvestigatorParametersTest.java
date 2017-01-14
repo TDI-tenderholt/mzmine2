@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 import com.google.common.collect.Range;
 import com.veritomyx.PeakInvestigatorSaaS;
 import com.veritomyx.VeritomyxSettings;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.BaseAction;
 import com.veritomyx.actions.PiVersionsAction;
 

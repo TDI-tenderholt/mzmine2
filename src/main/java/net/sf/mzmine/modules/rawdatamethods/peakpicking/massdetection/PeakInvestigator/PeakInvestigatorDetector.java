@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import com.veritomyx.VeritomyxSettings;
-import com.veritomyx.actions.BaseAction.ResponseFormatException;
+import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.PiVersionsAction;
 
 import net.sf.mzmine.datamodel.DataPoint;
