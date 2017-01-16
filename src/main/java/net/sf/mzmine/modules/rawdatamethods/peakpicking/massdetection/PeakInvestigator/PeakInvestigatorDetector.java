@@ -142,7 +142,7 @@ public class PeakInvestigatorDetector implements MassDetector
 						parameters.getMassRange(), filterTargetName(name));
 			} else {
 				logger.info("Checking status of job.");
-				job.initializeFetch(name, parameters.shouldDisplayLog());
+				job.initializeFetch(name);
 			}
 
 		} catch (IllegalStateException | ResponseFormatException | ResponseErrorException e) {

@@ -36,7 +36,6 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelectionType;
 import net.sf.mzmine.util.ExitCode;
@@ -71,15 +70,10 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 	public static final CalibrationFilesParameter calibrationScans = new CalibrationFilesParameter(
 			new RawDataFilesSelection(RawDataFilesSelectionType.SPECIFIC_FILES));
 
-	public static final BooleanParameter showLog = new BooleanParameter(
-			"Display Job Log",
-			"Check this if you want to display the PeakInvestigator job log when retrieving results");
-
 	public PeakInvestigatorParameters() {
-		super(new Parameter[] { versions, calibrationScans, startMass, endMass, showLog });
+		super(new Parameter[] { versions, calibrationScans, startMass, endMass });
 
 		versions.setValue("lastUsed");
-		showLog.setValue(true);
 	}
 
 	public static void setDialogFactory(DialogFactory headlessDialogFactory) {
@@ -314,10 +308,6 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 
 		return new int[] { dataMassRange[0], dataMassRange[1],
 				startMass.getValue(), endMass.getValue() };
-	}
-
-	public boolean shouldDisplayLog() {
-		return showLog.getValue();
 	}
 
 }

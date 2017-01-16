@@ -97,7 +97,6 @@ public class PeakInvestigatorTask
 
 	// keep track of state (fetch)
 	private RemoteJob job = null;
-	private boolean displayLog;
 	private StatusAction statusAction = null;
 
 	private String          desc;
@@ -128,11 +127,6 @@ public class PeakInvestigatorTask
 
 	public PeakInvestigatorTask withCalibDataFile(RawDataFile calibDataFile) {
 		this.calibDataFile = calibDataFile;
-		return this;
-	}
-
-	public PeakInvestigatorTask shouldDisplayLog(boolean displayLog) {
-		this.displayLog = displayLog;
 		return this;
 	}
 
@@ -203,7 +197,7 @@ public class PeakInvestigatorTask
 	 * @throws ResponseErrorException 
 	 * @throws IOException 
 	 */
-	public void initializeFetch(String compoundJobName, boolean displayLog)
+	public void initializeFetch(String compoundJobName)
 			throws ResponseFormatException, ResponseErrorException, IOException {
 
 		this.statusAction = null;
@@ -213,7 +207,6 @@ public class PeakInvestigatorTask
 		}
 
 		this.launch = false;
-		this.displayLog = displayLog;
 		this.jobID = RemoteJob.filterJobName(compoundJobName);
 		this.targetName = RemoteJob.filterTargetName(compoundJobName);
 
@@ -735,9 +728,7 @@ public class PeakInvestigatorTask
 		File logFile = new File(getFilenameWithPath(remoteFile.getName()));
 		downloadFileFromServer(statusAction.getLogFilename(), logFile);
 
-		if (displayLog) {
-			displayJobLog(logFile);
-		}
+		displayJobLog(logFile);
 
 		String mesg = "PeakInvestigator results successfully downloaded.\n"
 				+ "All your job files will now be deleted from the Veritomyx servers.\n"

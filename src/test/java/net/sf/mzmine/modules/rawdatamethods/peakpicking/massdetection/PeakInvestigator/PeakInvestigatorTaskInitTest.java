@@ -315,7 +315,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultFetchTask(
 				StatusAction.EXAMPLE_RESPONSE_1, actionCaptor);
 		task.usingDialogFactory(factory);
-		task.initializeFetch("|job-C1.10[PI]", true);
+		task.initializeFetch("|job-C1.10[PI]");
 
 		StatusAction action = actionCaptor.getValue();
 		assertEquals(StatusAction.Status.Running, action.getStatus());
@@ -337,7 +337,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultFetchTask(
 				StatusAction.EXAMPLE_RESPONSE_2, actionCaptor);
 		task.usingDialogFactory(factory);
-		task.initializeFetch("|job-C1.10[PI]", true);
+		task.initializeFetch("|job-C1.10[PI]");
 
 		StatusAction action = actionCaptor.getValue();
 		assertEquals(StatusAction.Status.Done, action.getStatus());
@@ -359,7 +359,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultFetchTask(response,
 				actionCaptor);
 		task.usingDialogFactory(factory);
-		task.initializeFetch("|job-C1.10[PI]", true);
+		task.initializeFetch("|job-C1.10[PI]");
 
 		fail("Should not reach here.");
 	}
@@ -378,7 +378,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultFetchTask(
 				BaseAction.API_SOURCE, actionCaptor);
 		task.usingDialogFactory(factory);
-		task.initializeFetch("|job-C1.10[PI]", true);
+		task.initializeFetch("|job-C1.10[PI]");
 
 		fail("Should not reach here.");
 	}
@@ -394,7 +394,7 @@ public class PeakInvestigatorTaskInitTest {
 		PeakInvestigatorTask task = createDefaultFetchTask(
 				StatusAction.EXAMPLE_RESPONSE_3, actionCaptor);
 		task.usingDialogFactory(factory);
-		task.initializeFetch("|job-C1.10[PI]", true);
+		task.initializeFetch("|job-C1.10[PI]");
 
 		StatusAction action = actionCaptor.getValue();
 		assertEquals(StatusAction.Status.Deleted, action.getStatus());
