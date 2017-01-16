@@ -211,7 +211,7 @@ public class PeakInvestigatorTask
 		this.targetName = RemoteJob.filterTargetName(compoundJobName);
 
 		StatusAction action = new StatusAction(username, password, jobID);
-		String response = debug ? vtmx.executeAction(new SandboxAction<>(action)) : vtmx.executeAction(action);
+		String response = debug ? vtmx.executeAction(new SandboxAction<>(action, "Done")) : vtmx.executeAction(action);
 		action.processResponse(response);
 
 		if (!action.isReady("STATUS")) {
@@ -650,6 +650,11 @@ public class PeakInvestigatorTask
 	 */
 	private DataPoint[] processScanRetrieve(int scan_num)
 	{
+		if (debug) {
+			logger.info("In debug mode - returning empty DataPoint[0] from processScanRetrieve.");
+			return null;
+		}
+
 		desc = "parsing scan " + scan_num;
 		List<DataPoint> mzPeaks = new ArrayList<DataPoint>();;
 
@@ -766,6 +771,10 @@ public class PeakInvestigatorTask
 	}
 
 	protected void displayJobLog(File localFile) throws IOException {
+		if (debug) {
+			return;
+		}
+
 		PeakInvestigatorLogDialog dialog = new PeakInvestigatorLogDialog(
 				MZmineCore.getDesktop().getMainWindow(), localFile);
 		dialog.setVisible(true);
