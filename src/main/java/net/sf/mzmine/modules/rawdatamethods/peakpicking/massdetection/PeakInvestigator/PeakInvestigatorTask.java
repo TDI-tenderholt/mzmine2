@@ -63,6 +63,7 @@ import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.DeleteAction;
 import com.veritomyx.actions.InitAction;
 import com.veritomyx.actions.RunAction;
+import com.veritomyx.actions.SandboxAction;
 import com.veritomyx.actions.SftpAction;
 import com.veritomyx.actions.StatusAction;
 
@@ -106,6 +107,8 @@ public class PeakInvestigatorTask
 	private File workingFile;
 	private TarOutputStream tarfile = null;
 
+	private final boolean debug;
+
 	public PeakInvestigatorTask(String server, String username,
 			String password, int projectID) throws JSchException {
 
@@ -113,6 +116,7 @@ public class PeakInvestigatorTask
 		this.username = username;
 		this.password = password;
 		this.projectID = projectID;
+		this.debug = System.getProperty("debug") != null;
 
 		logger = Logger.getLogger(this.getClass().getName());
 	}
@@ -158,7 +162,8 @@ public class PeakInvestigatorTask
 				.withScanCount(scans.length, calibDataFile == null ? 0 : calibDataFile.getNumOfScans())
 				.withNumberOfPoints(getMaxNumberOfPoints(scans))
 				.withMassRange(massRange[0], massRange[1], massRange[2], massRange[3]);
-		String response = vtmx.executeAction(initAction);
+
+		String response = debug ? vtmx.executeAction(new SandboxAction<>(initAction)) : vtmx.executeAction(initAction);
 		initAction.processResponse(response);
 
 		if(!initAction.isReady("INIT")) {
@@ -213,7 +218,7 @@ public class PeakInvestigatorTask
 		this.targetName = RemoteJob.filterTargetName(compoundJobName);
 
 		StatusAction action = new StatusAction(username, password, jobID);
-		String response = vtmx.executeAction(action);
+		String response = debug ? vtmx.executeAction(new SandboxAction<>(action)) : vtmx.executeAction(action);
 		action.processResponse(response);
 
 		if (!action.isReady("STATUS")) {
@@ -408,6 +413,11 @@ public class PeakInvestigatorTask
 		String remoteFilename = sftpAction.getDirectory() + "/"
 				+ file.getName();
 
+		if (debug) {
+			logger.info("In debug mode - skipping file upload.");
+			return;
+		}
+
 		SftpProgressMonitor monitor = dialogFactory.createSftpProgressMonitor();
 		vtmx.putFile(sftpAction, file.getAbsolutePath(), remoteFilename,
 				monitor);
@@ -428,7 +438,8 @@ public class PeakInvestigatorTask
 
 		RunAction runAction = new RunAction(username, password, jobID,
 				selectedRTO, filename, calibFilename);
-		String response = vtmx.executeAction(runAction);
+
+		String response = debug ? vtmx.executeAction(new SandboxAction<>(runAction)) : vtmx.executeAction(runAction);
 		runAction.processResponse(response);
 
 		if (!runAction.isReady("RUN")) {
@@ -573,6 +584,11 @@ public class PeakInvestigatorTask
 			throw new ResponseErrorException(sftpAction.getErrorMessage());
 		}
 
+		if (debug) {
+			logger.info("In debug mode - skipping download of file.");
+			return;
+		}
+
 		vtmx.getFile(sftpAction, remoteFilename,
 				localFile.getAbsolutePath(),
 				dialogFactory.createSftpProgressMonitor());
@@ -580,6 +596,11 @@ public class PeakInvestigatorTask
 
 	protected void extractScansFromTarball(File workingFile)
 			throws FileNotFoundException {
+
+		if (debug) {
+			logger.info("In debug mode - won't try to extract from " + workingFile);
+			return;
+		}
 
 		FileInputStream inputStream = new FileInputStream(workingFile);
 		TarInputStream tis = null;
@@ -739,7 +760,7 @@ public class PeakInvestigatorTask
 			ResponseErrorException, IOException {
 
 		DeleteAction action = new DeleteAction(username, password, jobID);
-		String response = vtmx.executeAction(action);
+		String response = debug ? vtmx.executeAction(new SandboxAction<>(action)) : vtmx.executeAction(action);
 		action.processResponse(response);
 
 		if (!action.isReady("DELETE")) {
