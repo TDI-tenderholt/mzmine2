@@ -660,7 +660,7 @@ public class PeakInvestigatorTask
 
 		// read in the peaks for this scan
 		// convert filename to expected peak file name
-		String basename = "scan_" + String.format("%04d", scan_num) + ".scan.mass_list.txt";
+		String basename = "scan_" + String.format("%04d", scan_num) + ".mass_list.txt";
 		String pfilename = getFilenameWithPath(basename);
 		logger.info("Parsing peaks data from " + basename);
 		try
