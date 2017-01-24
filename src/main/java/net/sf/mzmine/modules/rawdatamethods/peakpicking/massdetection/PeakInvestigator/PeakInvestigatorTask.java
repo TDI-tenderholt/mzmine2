@@ -693,14 +693,14 @@ public class PeakInvestigatorTask
 			}
 
 			reader.close();
-			if (!reader.isChecksumValid()) {
-				error("File has invalid checksum: " + basename);
-				return new DataPoint[0];
-			}
-
-		} catch (MissingChecksum e) {
-			error(e.getMessage());
-			e.printStackTrace();
+//			if (!reader.isChecksumValid()) {
+//				error("File has invalid checksum: " + basename);
+//				return new DataPoint[0];
+//			}
+//
+//		} catch (MissingChecksum e) {
+//			error(e.getMessage());
+//			e.printStackTrace();
 		} catch (FileNotFoundException e) {
 			error(e.getMessage());
 			e.printStackTrace();
