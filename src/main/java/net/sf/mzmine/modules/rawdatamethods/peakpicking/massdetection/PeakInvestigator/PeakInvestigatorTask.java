@@ -667,6 +667,10 @@ public class PeakInvestigatorTask
 		{
 			File centfile = new File(pfilename);
 			centfile.deleteOnExit();
+			if (!centfile.exists()) {
+				logger.info("Missing file: " + centfile);
+				return null;
+			}
 
 			ChecksumFileReader reader = new ChecksumFileReader(centfile.toPath());
 			String line;
@@ -710,6 +714,10 @@ public class PeakInvestigatorTask
 		}
 
 		desc = "scan " + scan_num + " parsed";
+		if (mzPeaks.size() == 0) {
+			return null;
+		}
+
 		return mzPeaks.toArray(new DataPoint[mzPeaks.size()]);
 	}
 
