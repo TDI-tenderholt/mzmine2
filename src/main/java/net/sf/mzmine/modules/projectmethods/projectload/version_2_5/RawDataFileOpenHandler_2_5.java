@@ -162,7 +162,8 @@ public class RawDataFileOpenHandler_2_5 extends DefaultHandler
             String targetName = attrs
                     .getValue(RawDataElementName_2_5.JOB_TARGET_NAME
                             .getElementName());
-            newRawDataFile.addJob(jobName, newRawDataFile, targetName);
+            String scaleFactor = attrs.getValue(RawDataElementName_2_5.JOB_SCALE_FACTOR.getElementName());
+            newRawDataFile.addJob(jobName, newRawDataFile, targetName, Double.valueOf(scaleFactor));
         }
     }
 

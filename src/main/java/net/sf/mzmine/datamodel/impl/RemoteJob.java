@@ -32,16 +32,22 @@ public class RemoteJob implements RemoteJobInfo
 	private String        jobID;
 	private RawDataFile   rawDataFile;
 	private String        futureMassList;
+	private double scaleFactor;
 	
-	public RemoteJob(String jobID, RawDataFile raw, String futureMassList)
+	public RemoteJob(String jobID, RawDataFile raw, String futureMassList, double scaleFactor)
 	{
 		this.jobID       = jobID;
 		this.rawDataFile = raw;
 		this.futureMassList  = futureMassList;
+		this.scaleFactor = scaleFactor;
 	}
 
 	public String getJobID() {
 		return jobID;
+	}
+
+	public double getScaleFactor() {
+		return scaleFactor;
 	}
 
 	public String toString() {

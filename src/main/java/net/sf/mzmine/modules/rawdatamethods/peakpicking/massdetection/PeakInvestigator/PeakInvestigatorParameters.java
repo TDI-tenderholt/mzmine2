@@ -22,6 +22,7 @@ package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInves
 import java.awt.Window;
 import java.io.IOException;
 import java.lang.Math;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,6 +36,7 @@ import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetect
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelectionType;
@@ -67,11 +69,14 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 		    "The nominal ending m/z in the data to be used for analysis.",
 		    Integer.MAX_VALUE);
 
+	public static final DoubleParameter scale = new DoubleParameter("m/z scaling",
+			"Scales the m/z before uploading to PI.", new DecimalFormat(), 1.0, 0.20, 1.0);
+
 	public static final CalibrationFilesParameter calibrationScans = new CalibrationFilesParameter(
 			new RawDataFilesSelection(RawDataFilesSelectionType.SPECIFIC_FILES));
 
 	public PeakInvestigatorParameters() {
-		super(new Parameter[] { versions, calibrationScans, startMass, endMass });
+		super(new Parameter[] { versions, calibrationScans, startMass, endMass, scale });
 
 		versions.setValue("lastUsed");
 	}

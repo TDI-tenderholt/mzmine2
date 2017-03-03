@@ -131,6 +131,11 @@ public class PeakInvestigatorTask
 		return this;
 	}
 
+	public PeakInvestigatorTask withMassScaleFactor(double scaleFactor) {
+		this.scaleFactor = scaleFactor;
+		return this;
+	}
+
 	public PeakInvestigatorTask withService(PeakInvestigatorSaaS vtmx) {
 		this.vtmx = vtmx;
 		return this;
@@ -480,7 +485,7 @@ public class PeakInvestigatorTask
 		// job was started - record it
 		logger.info("Job, " + jobID + ", launched");
 
-		rawDataFile.addJob("job-" + jobID, rawDataFile, targetName);	// record this job start
+		rawDataFile.addJob("job-" + jobID, rawDataFile, targetName, scaleFactor);	// record this job start
 
 		desc = "launch finished";
 	}
@@ -682,7 +687,7 @@ public class PeakInvestigatorTask
 
 				DataPoint dp;
 				Scanner sc = new Scanner(line);
-				double mz  = sc.nextDouble();
+				double mz  = sc.nextDouble() / scaleFactor;
 				double y   = sc.nextDouble();
 				if (sc.hasNextDouble()) {
 					double mzError = sc.nextDouble();

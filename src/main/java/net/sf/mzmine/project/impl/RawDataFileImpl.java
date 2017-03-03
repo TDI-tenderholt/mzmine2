@@ -437,9 +437,10 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
     /**
      * Add a remote job descriptor to the data file
      */
-    public synchronized void addJob(String name, RawDataFile raw, String targetName)
+    @Override
+    public synchronized void addJob(String name, RawDataFile raw, String targetName, double scaleFactor)
     {
-		RemoteJob job = new RemoteJob(name, raw, targetName);
+		RemoteJob job = new RemoteJob(name, raw, targetName, scaleFactor);
     	this.jobs_info.add(job);
     	MZmineCore.getProjectManager().getCurrentProject().addJob(job);
     }

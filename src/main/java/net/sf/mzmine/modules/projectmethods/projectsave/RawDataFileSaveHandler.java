@@ -241,6 +241,8 @@ class RawDataFileSaveHandler {
             atts.addAttribute("", "",
                     RawDataElementName.JOB_TARGET_NAME.getElementName(),
                     "CDATA", job.getFutureMassList());
+			atts.addAttribute("", "", RawDataElementName.JOB_SCALE_FACTOR.getElementName(), "CDATA",
+					Double.toString(job.getScaleFactor()));
             hd.startElement("", "", RawDataElementName.JOB.getElementName(),
                     atts);
             hd.endElement("", "", RawDataElementName.JOB.getElementName());

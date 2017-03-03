@@ -115,6 +115,8 @@ public class PeakInvestigatorDetector implements MassDetector
 		RawDataFile[] calibDataFiles = parameters
 				.getParameter(PeakInvestigatorParameters.calibrationScans)
 				.getValue().getMatchingRawDataFiles();
+		double scaleFactor = parameters.getParameter(PeakInvestigatorParameters.scale).getValue();
+
 		if (calibDataFiles.length > 1) {
 			error("Only 1 raw data file should be selected for calibration set");
 			return null;
@@ -124,7 +126,7 @@ public class PeakInvestigatorDetector implements MassDetector
 
 			job = new PeakInvestigatorTask(settings.server,
 					settings.username, settings.password, settings.projectID)
-					.withRawDataFile(raw);
+					.withRawDataFile(raw).withMassScaleFactor(scaleFactor);
 			if (calibDataFiles.length == 1) {
 				job.withCalibDataFile(calibDataFiles[0]);
 			}
