@@ -156,6 +156,11 @@ public class PeakInvestigatorTask
 		logger.info("Initializing PeakInvestigator™ Task");
 		desc    = "initializing";
 
+		if (scaleFactor != 1.0) {
+			BasicDialog warningDialog = dialogFactory.createDialog();
+			warningDialog.displayInfoMessage("Scale parameter has been set to value other than 1.0.", null);
+		}
+
 		InitAction initAction = InitAction
 				.create(username, password, "MZmine2")
 				.usingProjectId(projectID).withPiVersion(versionOfPi)

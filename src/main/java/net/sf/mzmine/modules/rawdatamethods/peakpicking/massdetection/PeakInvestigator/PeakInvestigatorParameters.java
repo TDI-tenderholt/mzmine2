@@ -311,8 +311,9 @@ public class PeakInvestigatorParameters extends SimpleParameterSet
 			endMassValue = dataMassRange[1];
 		}
 
-		return new int[] { dataMassRange[0], dataMassRange[1],
-				startMass.getValue(), endMass.getValue() };
+		double scaleFactor = scale.getValue();
+		return new int[] { (int) (dataMassRange[0] * scaleFactor), (int) (dataMassRange[1] * scaleFactor),
+				(int) (startMass.getValue() * scaleFactor), (int) (endMass.getValue() * scaleFactor) };
 	}
 
 }
