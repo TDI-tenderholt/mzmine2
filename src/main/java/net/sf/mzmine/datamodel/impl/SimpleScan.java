@@ -389,7 +389,7 @@ public class SimpleScan implements Scan {
     }
     
     @Override
-    public int exportToFile(@Nonnull String massListName, @Nonnull String saveDirectory, @Nonnull String filename) {
+    public int exportToFile(@Nonnull String massListName, @Nonnull String saveDirectory, @Nonnull String filename, double scalingFactor) {
     // TODO Auto-generated method stub
     	return 0;
     }

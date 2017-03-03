@@ -172,7 +172,7 @@ public class PeakInvestigatorTaskInitTest {
 
 		@Override
 		public int exportToFile(String massListName, String saveDirectory,
-				String filename) {
+				String filename, double scaleFactor) {
 			return 0;
 		}
 

@@ -91,6 +91,7 @@ public class PeakInvestigatorTask
 	private RawDataFile calibDataFile = null;
 	private String jobID = null;
 	private String targetName;
+	private double scaleFactor = 1.0;
 
 	// keep track of state (submit)
 	private String selectedRTO = null;
@@ -362,7 +363,7 @@ public class PeakInvestigatorTask
 		try {
 			// export the scan to a file
 			String filename = "scan_" + String.format("%04d", scan_num) + ".txt";
-			scan.exportToFile("", workingDirectory.toString(), filename);
+			scan.exportToFile("", workingDirectory.toString(), filename, scaleFactor);
 
 			// put the exported scan into the tar file
 			File f = new File(getFilenameWithPath(filename));
@@ -497,7 +498,7 @@ public class PeakInvestigatorTask
 			Scan scan = calibDataFile.getScan(scan_num);
 			String filename = "calib_" + String.format("%04d", scan_num)
 					+ ".txt";
-			scan.exportToFile("", workingDirectory.toString(), filename);
+			scan.exportToFile("", workingDirectory.toString(), filename, scaleFactor);
 
 			// put the exported scan into the tar file
 			File f = new File(getFilenameWithPath(filename));

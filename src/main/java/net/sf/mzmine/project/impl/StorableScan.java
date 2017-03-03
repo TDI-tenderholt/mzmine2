@@ -509,7 +509,8 @@ public class StorableScan implements Scan {
      * @param filename			// if empty, filename will be generated from scan information
      * @return					// number of points, 0 if requested mass list not found not found
      */
-    public int exportToFile(String massListName, String saveDirectory, String filename)
+    @Override
+    public int exportToFile(String massListName, String saveDirectory, String filename, double scaleFactor)
     {
     	int exported = 0;
 
@@ -536,7 +537,7 @@ public class StorableScan implements Scan {
     			writer.writeln("# Scan Max Mass: "    + mzRange.upperEndpoint());
     			writer.newLine();
     			for (int p = 0; p < num; p++)
-    				writer.writeln(pts[p].getMZ() + "\t" + pts[p].getIntensity());
+    				writer.writeln(pts[p].getMZ() * scaleFactor + "\t" + pts[p].getIntensity());
     			writer.close();
 
     			exported = num;

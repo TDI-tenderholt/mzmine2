@@ -105,10 +105,10 @@ public class ListExportTask extends AbstractTask
 
 			Scan scan = dataFile.getScan(scanNumbers[s]);
 			if (dumpScans)
-				scan.exportToFile("", saveDirectory, "");
+				scan.exportToFile("", saveDirectory, "", 1.0);
 
 			if (dumpPeaks)
-				scansWithMassList += (scan.exportToFile(massListName, saveDirectory, "") > 0) ? 1 : 0;
+				scansWithMassList += (scan.exportToFile(massListName, saveDirectory, "", 1.0) > 0) ? 1 : 0;
 
 			processedScans++;
 		}
