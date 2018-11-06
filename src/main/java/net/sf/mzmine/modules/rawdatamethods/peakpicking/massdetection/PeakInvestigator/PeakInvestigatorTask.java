@@ -19,13 +19,8 @@
 
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.PeakInvestigator;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -35,6 +30,9 @@ import java.util.zip.GZIPOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.veritomyx.checksums.ChecksumInputStream;
+import com.veritomyx.checksums.InvalidChecksumException;
+import com.veritomyx.checksums.MissingChecksumException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
@@ -56,8 +54,7 @@ import org.xeustechnologies.jtar.TarOutputStream;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpProgressMonitor;
-import com.veritomyx.ChecksumFileReader;
-import com.veritomyx.ChecksumFileReader.MissingChecksum;
+
 import com.veritomyx.PeakInvestigatorSaaS;
 import com.veritomyx.actions.Action.ResponseFormatException;
 import com.veritomyx.actions.DeleteAction;
@@ -663,16 +660,15 @@ public class PeakInvestigatorTask
 		String basename = "scan_" + String.format("%04d", scan_num) + ".mass_list.txt";
 		String pfilename = getFilenameWithPath(basename);
 		logger.info("Parsing peaks data from " + basename);
-		try
-		{
-			File centfile = new File(pfilename);
-			centfile.deleteOnExit();
-			if (!centfile.exists()) {
-				logger.info("Missing file: " + centfile);
-				return null;
-			}
 
-			ChecksumFileReader reader = new ChecksumFileReader(centfile.toPath());
+		File centfile = new File(pfilename);
+		centfile.deleteOnExit();
+		if (!centfile.exists()) {
+			logger.info("Missing file: " + centfile);
+			return null;
+		}
+
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ChecksumInputStream(Files.newInputStream(centfile.toPath()))))) {
 			String line;
 			while((line = reader.readLine()) != null) {
 				if (line.startsWith("#") || line.isEmpty()) {
@@ -695,20 +691,9 @@ public class PeakInvestigatorTask
 				mzPeaks.add(dp);
 				sc.close();
 			}
-
-			reader.close();
-//			if (!reader.isChecksumValid()) {
-//				error("File has invalid checksum: " + basename);
-//				return new DataPoint[0];
-//			}
-//
-//		} catch (MissingChecksum e) {
-//			error(e.getMessage());
-//			e.printStackTrace();
-		} catch (FileNotFoundException e) {
+		} catch (MissingChecksumException | InvalidChecksumException e) {
 			error(e.getMessage());
-			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (IOException | NoSuchAlgorithmException e) {
 			error(e.getMessage());
 			e.printStackTrace();
 		}

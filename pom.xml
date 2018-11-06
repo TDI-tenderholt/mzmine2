@@ -493,6 +493,16 @@ This version has implemented the PeakInvestigator™ public API for peak (mass) 
 			<artifactId>peakinvestigator-sdk</artifactId>
 			<version>[5.0,6.0)</version>
 		</dependency>
+		<dependency>
+			<groupId>com.veritomyx</groupId>
+			<artifactId>checksums</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.11</version>
+		</dependency>
 	</dependencies>
 
 </project>

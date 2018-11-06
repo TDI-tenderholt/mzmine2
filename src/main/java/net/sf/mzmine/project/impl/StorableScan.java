@@ -19,12 +19,10 @@
 
 package net.sf.mzmine.project.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
@@ -35,6 +33,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.swing.SwingUtilities;
 
+import com.veritomyx.checksums.ChecksumOutputStream;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.MassSpectrumType;
@@ -48,7 +47,6 @@ import net.sf.mzmine.util.ScanUtils;
 
 import org.apache.commons.io.FilenameUtils;
 
-import com.veritomyx.ChecksumFileWriter;
 import com.google.common.collect.Range;
 
 /**
@@ -486,7 +484,6 @@ public class StorableScan implements Scan {
      * Open the proper type of buffered file depending on the .gz suffix
      * 
      * @param path
-     * @param filedata
      * @return
      * @throws IOException
      */
@@ -511,73 +508,84 @@ public class StorableScan implements Scan {
      */
     public int exportToFile(String massListName, String saveDirectory, String filename)
     {
-    	int exported = 0;
+    	if (saveDirectory.isEmpty()) {
+    		return 0;
+		}
 
-    	if (filename.isEmpty())
-    		filename = exportFilename(massListName);
-
-	if (!saveDirectory.isEmpty())
-	    	filename = saveDirectory + File.separator + filename;
-
+		final Path path = Paths.get(saveDirectory, filename);
+		int num = 0;
     	if (massListName.isEmpty())	// export scan
     	{
-    		logger.info("Exporting scan " + getScanNumber() + " to file " + filename);
-    		try
-    		{
-    			ChecksumFileWriter writer = new ChecksumFileWriter(filename);
+    		logger.info("Exporting scan " + getScanNumber() + " to file " + path);
 
-    			DataPoint pts[] = getDataPoints();
-    			int num = pts.length;
-    			writer.writeln("# Scan Number: "      + getScanNumber());
-    			writer.writeln("# Scan MS Level: "    + getMSLevel());
-    			writer.writeln("# Scan Data Points: " + num);
-    			writer.writeln("# Scan Mass Range: "  + (mzRange.upperEndpoint() - mzRange.lowerEndpoint()));
-    			writer.writeln("# Scan Min Mass: "    + mzRange.lowerEndpoint());
-    			writer.writeln("# Scan Max Mass: "    + mzRange.upperEndpoint());
-    			writer.newLine();
-    			for (int p = 0; p < num; p++)
-    				writer.writeln(pts[p].getMZ() + "\t" + pts[p].getIntensity());
-    			writer.close();
+			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new ChecksumOutputStream(Files.newOutputStream(path))))) {
+				DataPoint pts[] = getDataPoints();
+				num = pts.length;
+				writer.write("# Scan Number: " + getScanNumber());
+				writer.newLine();
 
-    			exported = num;
-    		}
+				writer.write("# Scan MS Level: " + getMSLevel());
+				writer.newLine();
+
+				writer.write("# Scan Data Points: " + num);
+				writer.newLine();
+
+				writer.write("# Scan Mass Range: " + (mzRange.upperEndpoint() - mzRange.lowerEndpoint()));
+				writer.newLine();
+
+				writer.write("# Scan Min Mass: " + mzRange.lowerEndpoint());
+				writer.newLine();
+
+				writer.write("# Scan Max Mass: " + mzRange.upperEndpoint());
+				writer.newLine();
+
+				for (DataPoint pt : pts) {
+					writer.write(pt.getMZ() + "\t" + pt.getIntensity());
+					writer.newLine();
+				}
+			}
     		catch (Exception ex)
     		{
-    			Logger.getLogger(ListExportTask.class.getName()).log(Level.SEVERE, "Failed writing scan file, " + filename, ex);
+    			Logger.getLogger(ListExportTask.class.getName()).log(Level.SEVERE, "Failed writing scan file, " + path, ex);
     		}
-    	}
-    	else						// export given mass list
-    	{
-    		MassList massList = getMassList(massListName);
-    		if (massList != null)	// Skip those scans which do not have a mass list of given name
-    		{
-    			logger.info("Exporting mass list " + massListName + " for scan "+ getScanNumber() + " to file " + filename);
-    			try
-    			{
-    				ChecksumFileWriter writer = new ChecksumFileWriter(filename);
 
-    				DataPoint mzPeaks[] = massList.getDataPoints();
-    				int num = mzPeaks.length;
-    				writer.writeln("# MS Level: "    + getMSLevel());
-    				writer.writeln("# Scan: "        + getScanNumber());
-    				writer.writeln("# Mass List: "   + massListName);
-    				writer.writeln("# Data Points: " + num);
-    				writer.newLine();
-    				for (int p = 0; p < num; p++)
-    				{
-    					DataPoint pt = mzPeaks[p];
-    					writer.writeln(pt.getMZ() + "\t" + pt.getIntensity());
-    				}
-    				writer.close();
-
-    				exported = num;
-    			}
-    			catch (Exception ex)
-    			{
-    				Logger.getLogger(ListExportTask.class.getName()).log(Level.SEVERE, "Failed writing mass list file, " + filename, ex);
-    			}
-    		}
+    		return num;
     	}
-    	return exported;
+
+    	// export given mass list
+		MassList massList = getMassList(massListName);
+    	if (massList == null) {
+			return 0;
+		}
+
+		logger.info("Exporting mass list " + massListName + " for scan "+ getScanNumber() + " to file " + path);
+		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new ChecksumOutputStream(Files.newOutputStream(path))))) {
+
+			DataPoint mzPeaks[] = massList.getDataPoints();
+			num = mzPeaks.length;
+			writer.write("# MS Level: "    + getMSLevel());
+			writer.newLine();
+
+			writer.write("# Scan: "        + getScanNumber());
+			writer.newLine();
+
+			writer.write("# Mass List: "   + massListName);
+			writer.newLine();
+
+			writer.write("# Data Points: " + num);
+			writer.newLine();
+
+			for (DataPoint pt : mzPeaks)
+			{
+				writer.write(pt.getMZ() + "\t" + pt.getIntensity());
+				writer.newLine();
+			}
+		}
+		catch (Exception ex)
+		{
+			Logger.getLogger(ListExportTask.class.getName()).log(Level.SEVERE, "Failed writing mass list file, " + path, ex);
+		}
+
+		return num;
     }
 }
