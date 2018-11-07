@@ -474,7 +474,7 @@ public class StorableScan implements Scan {
     public String exportFilename(String massListName)
     {
     	String filename = FilenameUtils.removeExtension(getDataFile().getName())
-    			+ ".ms" + getMSLevel() + "scan" + String.format("%04d", getScanNumber())
+    			+ ".ms" + getMSLevel() + "scan" + String.format("%06d", getScanNumber())
     			+ (massListName.isEmpty() ? "" : ".peaks_" + massListName)
     			+ ".txt";
     	return filename;

@@ -358,7 +358,7 @@ public class PeakInvestigatorTask
 		// Export all scans to remote processor
 		try {
 			// export the scan to a file
-			String filename = "scan_" + String.format("%04d", scan_num) + ".txt";
+			String filename = "scan_" + String.format("%06d", scan_num) + ".txt";
 			scan.exportToFile("", workingDirectory.toString(), filename);
 
 			// put the exported scan into the tar file
@@ -492,7 +492,7 @@ public class PeakInvestigatorTask
 
 		for (int scan_num : calibDataFile.getScanNumbers()) {
 			Scan scan = calibDataFile.getScan(scan_num);
-			String filename = "calib_" + String.format("%04d", scan_num)
+			String filename = "calib_" + String.format("%06d", scan_num)
 					+ ".txt";
 			scan.exportToFile("", workingDirectory.toString(), filename);
 
@@ -657,7 +657,7 @@ public class PeakInvestigatorTask
 
 		// read in the peaks for this scan
 		// convert filename to expected peak file name
-		String basename = "scan_" + String.format("%04d", scan_num) + ".mass_list.txt";
+		String basename = "scan_" + String.format("%06d", scan_num) + ".mass_list.txt";
 		String pfilename = getFilenameWithPath(basename);
 		logger.info("Parsing peaks data from " + basename);
 
